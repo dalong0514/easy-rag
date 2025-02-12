@@ -1,8 +1,8 @@
 import os, time
-from utils import get_router_query_engine
+from utils import get_router_query_engine, auto_retrieval_tool_call
 
 def agent_rag():
-    query_engine = get_router_query_engine(["/Users/Daglas/Downloads/metagpt.pdf"])
+    query_engine = get_router_query_engine()
 
     response = query_engine.query("What is the summary of the document?")
     print(str(response))
@@ -19,7 +19,7 @@ def agent_rag():
 if __name__ == "__main__":
     start_time = time.time()
     print('waiting...\n')
-    agent_rag()
+    auto_retrieval_tool_call()
     end_time = time.time()
     elapsed_time = end_time - start_time
     if elapsed_time < 60:
