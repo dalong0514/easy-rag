@@ -2,7 +2,7 @@ import os, time
 from utils import router_query_engine, auto_retrieval_tool_call, multi_document_agent_rag
 
 def agent_rag():
-    multi_document_agent_rag()
+    router_query_engine()
 
 if __name__ == "__main__":
     start_time = time.time()
