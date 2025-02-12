@@ -1,9 +1,8 @@
 from helper import get_api_key
-from langchain_openai import ChatOpenAI
+from llama_index.llms.openai import OpenAI
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core import Settings
-from llama_index.llms.openai import OpenAI
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core import SummaryIndex, VectorStoreIndex
 from llama_index.core.tools import QueryEngineTool, FunctionTool
@@ -19,18 +18,14 @@ from typing import List, Optional
 
 api_key = get_api_key()
 base_url= "https://api.302.ai/v1"
-model_name = "gpt-3.5-turbo"
+model_name = "deepseek-v3-aliyun"
 
 Settings.llm = OpenAI(
-    base_url=base_url,
+    api_base=base_url,
     api_key=api_key,
     model_name=model_name
 )
-# Settings.llm = ChatOpenAI(
-#     base_url=base_url,
-#     api_key=api_key,
-#     model_name=model_name
-# )
+
 Settings.embed_model = resolve_embed_model("local:/Users/Daglas/dalong.modelsets/bge-m3")
 
 def get_vector_nodes():
