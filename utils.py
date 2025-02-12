@@ -1,5 +1,7 @@
+import os
 from helper import get_api_key
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.gemini import Gemini
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core import Settings
@@ -17,14 +19,22 @@ from pathlib import Path
 from typing import List, Optional
 
 api_key = get_api_key()
+
 base_url= "https://api.302.ai/v1"
 model_name = "deepseek-v3-aliyun"
-
 Settings.llm = OpenAI(
     api_base=base_url,
     api_key=api_key,
     model_name=model_name
 )
+
+# os.environ["http_proxy"] = "http://127.0.0.1:7890"
+# os.environ["https_proxy"] = "http://127.0.0.1:7890"
+# model_name = "models/gemini-2.0-flash-exp"
+# Settings.llm = Gemini(
+#     api_key=api_key,
+#     model_name=model_name
+# )
 
 Settings.embed_model = resolve_embed_model("local:/Users/Daglas/dalong.modelsets/bge-m3")
 

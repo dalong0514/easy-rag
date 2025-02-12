@@ -3,3 +3,4 @@ python-dotenv==1.0.1
 PyMuPDF==1.25.1
 shapely==2.0.6
 llama_index==0.12.16
+llama-index-llms-gemini==0.4.10
