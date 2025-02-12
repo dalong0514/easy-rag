@@ -9,13 +9,12 @@ from llama_index.core.tools import QueryEngineTool, FunctionTool
 from llama_index.core.query_engine.router_query_engine import RouterQueryEngine
 from llama_index.core.selectors import LLMSingleSelector
 from llama_index.core.vector_stores import MetadataFilters, FilterCondition
+from llama_index.core.embeddings import resolve_embed_model
 from typing import List, Optional
 
 api_key = get_api_key()
 base_url= "https://api.302.ai/v1"
-local_base_url= "https://24d5-115-236-24-30.ngrok-free.app"
 model_name = "gpt-3.5-turbo"
-embedding_model_name = "text-embedding-ada-002"
 # embedding_model_name = "bge-m3:latest"
 # model_name = "gemini-2.0-flash-exp"
 
@@ -24,11 +23,7 @@ Settings.llm = OpenAI(
     api_key=api_key,
     model_name=model_name
 )
-Settings.embed_model = OpenAIEmbedding(
-    base_url=base_url,
-    api_key=api_key,
-    model_name=embedding_model_name
-)
+Settings.embed_model = resolve_embed_model("local:/Users/Daglas/dalong.modelsets/bge-m3")
 
 def get_vector_nodes():
     # load documents

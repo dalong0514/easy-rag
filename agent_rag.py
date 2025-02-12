@@ -180,7 +180,7 @@ def agent_rag():
 if __name__ == "__main__":
     start_time = time.time()
     print('waiting...\n')
-    agent_rag()
+    router_query_engine()
     end_time = time.time()
     elapsed_time = end_time - start_time
     if elapsed_time < 60:
