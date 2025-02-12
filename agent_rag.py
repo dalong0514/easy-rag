@@ -4,6 +4,9 @@ from utils import get_router_query_engine, auto_retrieval_tool_call, get_doc_too
 from llama_index.llms.openai import OpenAI
 from llama_index.core.agent import FunctionCallingAgentWorker
 from llama_index.core.agent import AgentRunner
+from llama_index.core import VectorStoreIndex
+from llama_index.core.objects import ObjectIndex
+from pathlib import Path
 
 api_key = get_api_key()
 base_url= "https://api.302.ai/v1"
@@ -85,39 +88,94 @@ def agent_reasoning_loop_step():
     response = agent.finalize_response(task.task_id)
     print(str(response))
 
+def multi_document_agent_rag():
+    papers = [
+        "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/metagpt.pdf",
+        "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/onglora.pdf",
+        "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/selfrag.pdf",
+    ]
 
-def agent_rag():
-    vector_tool, summary_tool = get_doc_tools("/Users/Daglas/Downloads/metagpt.pdf", "metagpt")
+    paper_to_tools_dict = {}
+    for paper in papers:
+        print(f"Getting tools for paper: {paper}")
+        vector_tool, summary_tool = get_doc_tools(paper, Path(paper).stem)
+        paper_to_tools_dict[paper] = [vector_tool, summary_tool]
+
+    initial_tools = [t for paper in papers for t in paper_to_tools_dict[paper]]
+    len(initial_tools)
+
     agent_worker = FunctionCallingAgentWorker.from_tools(
-        [vector_tool, summary_tool], 
+        initial_tools, 
         llm=llm, 
         verbose=True
     )
     agent = AgentRunner(agent_worker)
 
-    task = agent.create_task(
-        "Tell me about the agent roles in MetaGPT, "
-        "and then how they communicate with each other."
-    )
-    step_output = agent.run_step(task.task_id)
-
-    completed_steps = agent.get_completed_steps(task.task_id)
-    print(f"Num completed for task {task.task_id}: {len(completed_steps)}")
-    print(completed_steps[0].output.sources[0].raw_output)
-
-    upcoming_steps = agent.get_upcoming_steps(task.task_id)
-    print(f"Num upcoming steps for task {task.task_id}: {len(upcoming_steps)}")
-    upcoming_steps[0]
-
-    step_output = agent.run_step(
-        task.task_id, input="What about how agents share information?"
+    response = agent.query(
+        "Tell me about the evaluation dataset used in LongLoRA, "
+        "and then tell me about the evaluation results"
     )
 
-    step_output = agent.run_step(task.task_id)
-    print(step_output.is_last)
-
-    response = agent.finalize_response(task.task_id)
+    response = agent.query("Give me a summary of both Self-RAG and LongLoRA")
     print(str(response))
+
+
+def agent_rag():
+    papers = [
+        "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/metagpt.pdf",
+        "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/longlora.pdf",
+        "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/selfrag.pdf",
+        "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/knowledge_card.pdf",
+        "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/loftq.pdf", 
+        "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/swebench.pdf",
+        "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/zipformer.pdf",
+        "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/values.pdf",
+        "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/finetune_fair_diffusion.pdf",
+        "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/metra.pdf",
+        # "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/vr_mcl.pdf"
+    ]
+
+    paper_to_tools_dict = {}
+    for paper in papers:
+        print(f"Getting tools for paper: {paper}")
+        vector_tool, summary_tool = get_doc_tools(paper, Path(paper).stem)
+        paper_to_tools_dict[paper] = [vector_tool, summary_tool]
+
+    all_tools = [t for paper in papers for t in paper_to_tools_dict[paper]]
+    # define an "object" index and retriever over these tools
+    obj_index = ObjectIndex.from_objects(
+        all_tools,
+        index_cls=VectorStoreIndex,
+    )
+
+    obj_retriever = obj_index.as_retriever(similarity_top_k=3)
+    tools = obj_retriever.retrieve(
+        "Tell me about the eval dataset used in MetaGPT and SWE-Bench"
+    )
+    tools[2].metadata
+
+    agent_worker = FunctionCallingAgentWorker.from_tools(
+        tool_retriever=obj_retriever,
+        llm=llm, 
+        system_prompt=""" \
+    You are an agent designed to answer queries over a set of given papers.
+    Please always use the tools provided to answer a question. Do not rely on prior knowledge.\
+
+    """,
+        verbose=True
+    )
+    agent = AgentRunner(agent_worker)
+
+    response = agent.query(
+        "Tell me about the evaluation dataset used "
+        "in MetaGPT and compare it against SWE-Bench"
+    )
+    print(str(response))
+
+    response = agent.query(
+        "Compare and contrast the LoRA papers (LongLoRA, LoftQ). "
+        "Analyze the approach in each paper first. "
+    )
 
 if __name__ == "__main__":
     start_time = time.time()
