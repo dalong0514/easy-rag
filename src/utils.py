@@ -59,7 +59,7 @@ def import_vector_document():
     )
     vector_store = WeaviateVectorStore(
         weaviate_client=client,
-        index_name="LlamaIndex",
+        index_name="AgentRAGDocument",
         # we pass our custom batch as a client_kwargs
         client_kwargs={"custom_batch": custom_batch},
     )
@@ -69,7 +69,7 @@ def import_vector_document():
         documents, storage_context=storage_context
     )
 
-    print("All vector data has been written to Weaviate.")
+    print("documents data has been written to Weaviate.")
 
     client.close()  # Free up resources
 
@@ -79,11 +79,10 @@ def search_from_weaviate():
 
     vector_store = WeaviateVectorStore(
         weaviate_client=client, 
-        index_name="LlamaIndex"
+        index_name="AgentRAGDocument"
     )
 
     vector_index = VectorStoreIndex.from_vector_store(vector_store)
-
     vector_query_engine = vector_index.as_query_engine()
 
     vector_tool = QueryEngineTool.from_defaults(
@@ -127,7 +126,7 @@ def create_document_collection():
     
     # 创建集合
     documents = client.collections.create(
-        name="LlamaIndex",
+        name="AgentRAGDocument",
         vectorizer_config=Configure.Vectorizer.text2vec_ollama(
             api_endpoint="http://host.docker.internal:11434",
             model="bge-m3:latest",
@@ -137,67 +136,20 @@ def create_document_collection():
             model="deepseek-r1:14b",
         )
     )
+    print("documents collection has been created.")
 
     client.close()  # Free up resources
 
 
 def delete_document_collection():
-    """删除 Weaviate 中的 DocumentRAG 集合"""
+    """删除 Weaviate 中的集合"""
     # 连接本地 Weaviate
     client = weaviate.connect_to_local()
     
     # 删除集合
-    client.collections.delete("DocumentRAG")
+    client.collections.delete("AgentRAGDocument")
     
     client.close()  # 释放资源
-
-def import_document_to_weaviate():
-    # 获取文档节点，内部包含文本内容及元数据
-    nodes = get_vector_nodes()
-    
-    # 连接本地 Weaviate
-    client = weaviate.connect_to_local()
-
-    documents = client.collections.get("DocumentRAG")
-
-    with documents.batch.dynamic() as batch:
-        for node in nodes:
-            text = node.get_content()
-            metadata = node.get_metadata_str()
-            batch.add_object({
-                "content": text,
-                "metadata": metadata,
-            })
-            if batch.number_errors > 10:
-                print("Batch import stopped due to excessive errors.")
-                break
-
-    failed_objects = documents.batch.failed_objects
-    if failed_objects:
-        print(f"Number of failed imports: {len(failed_objects)}")
-        print(f"First failed object: {failed_objects[0]}")
-
-    client.close()  # Free up resources
-
-    print("All vector data has been written to Weaviate.")
-
-
-def search_document_from_weaviate():
-    # 连接本地 Weaviate
-    client = weaviate.connect_to_local()
-
-    jeopardy = client.collections.get("DocumentRAG")
-    response = jeopardy.query.near_text(
-        query="Tell me about the agent roles in MetaGPT, and then how they communicate with each other.",
-        limit=3,
-        return_metadata=MetadataQuery(distance=True)
-    )
-
-    for o in response.objects:
-        print(o.properties)
-        print(o.metadata.distance)
-
-    client.close()  # Free up resources
 
 def get_router_query_engine():
     nodes = get_vector_nodes()
@@ -544,11 +496,10 @@ def multi_document_agent_rag_rank():
 
 if __name__ == "__main__":
     # create_document_collection()
+    # import_vector_document()
+    search_from_weaviate()
     # delete_document_collection
-    # import_document_to_weaviate()
-    # search_document_from_weaviate()
     # router_query_engine()
     # agent_reasoning_loop()
     # multi_document_agent_rag_rank()
     # import_vector_document()
-    search_from_weaviate()
