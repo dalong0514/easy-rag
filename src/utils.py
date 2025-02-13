@@ -1,7 +1,7 @@
 import os
 import weaviate
 from pathlib import Path
-from helper import get_api_key
+from helper import get_api_key, get_api_key_weaviate, get_wcd_url_weaviate
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.gemini import Gemini
 from llama_index.core import SimpleDirectoryReader
@@ -18,21 +18,25 @@ from llama_index.core.agent import FunctionCallingAgentWorker
 from llama_index.core.agent import AgentRunner
 from llama_index.core.objects import ObjectIndex
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from weaviate.classes.config import ConsistencyLevel
+from llama_index.core import StorageContext
 from weaviate.classes.config import Configure
 from weaviate.classes.query import MetadataQuery
 from typing import List, Optional
 import json, requests
 
 api_key = get_api_key()
+wcd_api_key = get_api_key_weaviate()
+wcd_url = get_api_key_weaviate()
 
 base_url= "https://api.302.ai/v1"
-model_name = "deepseek-v3-aliyun"
+model_name = "deepseek-v3-huoshan"
 Settings.llm = OpenAI(
     api_base=base_url,
     api_key=api_key,
     model_name=model_name
 )
-
+Settings.embed_model = resolve_embed_model("local:/Users/Daglas/dalong.modelsets/bge-m3")
 # os.environ["http_proxy"] = "http://127.0.0.1:7890"
 # os.environ["https_proxy"] = "http://127.0.0.1:7890"
 # model_name = "models/gemini-2.0-flash-exp"
@@ -41,7 +45,72 @@ Settings.llm = OpenAI(
 #     model_name=model_name
 # )
 
-Settings.embed_model = resolve_embed_model("local:/Users/Daglas/dalong.modelsets/bge-m3")
+def import_vector_document():
+    # 连接本地 Weaviate
+    client = weaviate.connect_to_local()
+
+    # load documents
+    documents = SimpleDirectoryReader(input_files=["../data/papers/metagpt.pdf"]).load_data()
+
+    custom_batch = client.batch.fixed_size(
+        batch_size=1024,
+        concurrent_requests=4,
+        consistency_level=ConsistencyLevel.ALL,
+    )
+    vector_store = WeaviateVectorStore(
+        weaviate_client=client,
+        index_name="LlamaIndex",
+        # we pass our custom batch as a client_kwargs
+        client_kwargs={"custom_batch": custom_batch},
+    )
+
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    index = VectorStoreIndex.from_documents(
+        documents, storage_context=storage_context
+    )
+
+    print("All vector data has been written to Weaviate.")
+
+    client.close()  # Free up resources
+
+def search_from_weaviate():
+    # 连接本地 Weaviate
+    client = weaviate.connect_to_local()
+
+    vector_store = WeaviateVectorStore(
+        weaviate_client=client, 
+        index_name="LlamaIndex"
+    )
+
+    vector_index = VectorStoreIndex.from_vector_store(vector_store)
+
+    vector_query_engine = vector_index.as_query_engine()
+
+    vector_tool = QueryEngineTool.from_defaults(
+        query_engine=vector_query_engine,
+        description=(
+            "Useful for retrieving specific context from the MetaGPT paper."
+        ),
+    )
+
+    query_engine = RouterQueryEngine(
+        selector=LLMSingleSelector.from_defaults(),
+        query_engine_tools=[
+            vector_tool,
+        ],
+        verbose=True
+    )
+
+    response = query_engine.query("What is the summary of the document?")
+    print(str(response))
+    print(len(response.source_nodes))
+
+    response = query_engine.query("How do agents share information with other agents?")
+    print(len(response.source_nodes))
+    print(str(response))
+
+    client.close()  # Free up resources
+
 
 def get_vector_nodes():
     # load documents
@@ -52,13 +121,13 @@ def get_vector_nodes():
 
     return nodes
 
-def create_document_node_collection():
+def create_document_collection():
     # 连接本地 Weaviate
     client = weaviate.connect_to_local()
     
     # 创建集合
     documents = client.collections.create(
-        name="DocumentRAG",
+        name="LlamaIndex",
         vectorizer_config=Configure.Vectorizer.text2vec_ollama(
             api_endpoint="http://host.docker.internal:11434",
             model="bge-m3:latest",
@@ -72,7 +141,7 @@ def create_document_node_collection():
     client.close()  # Free up resources
 
 
-def delete_document_node_collection():
+def delete_document_collection():
     """删除 Weaviate 中的 DocumentRAG 集合"""
     # 连接本地 Weaviate
     client = weaviate.connect_to_local()
@@ -82,7 +151,7 @@ def delete_document_node_collection():
     
     client.close()  # 释放资源
 
-def import_document_nodes_to_weaviate():
+def import_document_to_weaviate():
     # 获取文档节点，内部包含文本内容及元数据
     nodes = get_vector_nodes()
     
@@ -110,7 +179,7 @@ def import_document_nodes_to_weaviate():
 
     client.close()  # Free up resources
 
-    print("全部节点已写入 Weaviate。")
+    print("All vector data has been written to Weaviate.")
 
 
 def search_document_from_weaviate():
@@ -474,10 +543,12 @@ def multi_document_agent_rag_rank():
     )
 
 if __name__ == "__main__":
-    # create_document_node_collection()
-    # delete_document_node_collection
-    # import_document_nodes_to_weaviate()
-    search_document_from_weaviate()
+    # create_document_collection()
+    # delete_document_collection
+    # import_document_to_weaviate()
+    # search_document_from_weaviate()
     # router_query_engine()
     # agent_reasoning_loop()
     # multi_document_agent_rag_rank()
+    # import_vector_document()
+    search_from_weaviate()
