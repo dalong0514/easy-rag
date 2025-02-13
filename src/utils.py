@@ -18,11 +18,12 @@ from llama_index.core.agent import FunctionCallingAgentWorker
 from llama_index.core.agent import AgentRunner
 from llama_index.core.objects import ObjectIndex
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from weaviate.classes.config import Configure
 from typing import List, Optional
 
 api_key = get_api_key()
 
-base_url= "https://api.302.ai/v1"
+base_url = "https://api.302.ai/v1"
 model_name = "deepseek-v3-aliyun"
 Settings.llm = OpenAI(
     api_base=base_url,
@@ -40,32 +41,37 @@ Settings.llm = OpenAI(
 
 Settings.embed_model = resolve_embed_model("local:/Users/Daglas/dalong.modelsets/bge-m3")
 
-# 初始化 Weaviate 客户端和向量存储对象（请根据实际情况修改 URL 和 index_name）
-# 修改后 v4 syntax
-# weaviate_client = weaviate.connect_to_local()
-
-# vector_store = WeaviateVectorStore(
-#     client=weaviate_client,
-#     index_name="llama_index",
-#     embedding=Settings.embed_model,
-# )
+# -------------------------------
+# 初始化本地 Weaviate 客户端和向量存储对象
+# -------------------------------
+weaviate_client = weaviate.connect_to_local()
+if weaviate_client.is_ready():
+    print("Local Weaviate is ready.")
+    # 创建本地向量存储对象，使用 bge-m3 模型进行向量化
+    vector_store = WeaviateVectorStore(
+        client=weaviate_client,
+        index_name="RagVectorIndex",
+        text2vec_config=Configure.Vectorizer.text2vec_ollama(
+            api_endpoint="http://host.docker.internal:11434",
+            model="bge-m3:latest"
+        )
+    )
+else:
+    print("Local Weaviate is not ready.")
+    exit(1)
 
 def get_vector_nodes():
     # 加载文档
     documents = SimpleDirectoryReader(input_files=["/Users/Daglas/Downloads/metagpt.pdf"]).load_data()
-
     splitter = SentenceSplitter(chunk_size=1024)
     nodes = splitter.get_nodes_from_documents(documents)
-
     return nodes
 
 def get_router_query_engine():
     nodes = get_vector_nodes()
-
     summary_index = SummaryIndex(nodes)
-    # 修改处：将 vector_store 参数传入 VectorStoreIndex
-    # vector_index = VectorStoreIndex(nodes, vector_store=vector_store)
-    vector_index = VectorStoreIndex(nodes)
+    # 修改处：传入 vector_store 参数，实现将向量数据存入本地数据库
+    vector_index = VectorStoreIndex(nodes, vector_store=vector_store)
 
     summary_query_engine = summary_index.as_query_engine(
         response_mode="tree_summarize",
@@ -88,14 +94,13 @@ def get_router_query_engine():
         query_engine_tools=[summary_tool, vector_tool],
         verbose=True
     )
-
     return query_engine
 
 def add(x: int, y: int) -> int:
     """Adds two integers together."""
     return x + y
 
-def mystery(x: int, y: int) -> int: 
+def mystery(x: int, y: int) -> int:
     """Mystery function that operates on top of two numbers."""
     return (x + y) * (x + y)
 
@@ -103,8 +108,8 @@ def tool_call():
     add_tool = FunctionTool.from_defaults(fn=add)
     mystery_tool = FunctionTool.from_defaults(fn=mystery)
     response = Settings.llm.predict_and_call(
-        [add_tool, mystery_tool], 
-        "Tell me the output of the mystery function on 2 and 9", 
+        [add_tool, mystery_tool],
+        "Tell me the output of the mystery function on 2 and 9",
         verbose=True
     )
     print(str(response))
@@ -118,7 +123,6 @@ def vector_query(query: str, page_numbers: List[str]) -> str:
         page_numbers (List[str]): 指定页码过滤。如果为空，则在所有页面中搜索。
     """
     metadata_dicts = [{"key": "page_label", "value": p} for p in page_numbers]
-    
     nodes = get_vector_nodes()
     # 修改处：传入 vector_store 参数
     vector_index = VectorStoreIndex(nodes, vector_store=vector_store)
@@ -147,8 +151,8 @@ def auto_retrieval_tool_call():
     summary_tool = get_summary_tool()
     prompt = "What is a summary of the paper?"
     response = Settings.llm.predict_and_call(
-        [vector_query_tool, summary_tool], 
-        prompt, 
+        [vector_query_tool, summary_tool],
+        prompt,
         verbose=True
     )
     for n in response.source_nodes:
@@ -212,8 +216,8 @@ def router_query_engine():
 def agent_reasoning_loop():
     vector_tool, summary_tool = get_doc_tools("/Users/Daglas/Downloads/metagpt.pdf", "metagpt")
     agent_worker = FunctionCallingAgentWorker.from_tools(
-        [vector_tool, summary_tool], 
-        llm=Settings.llm, 
+        [vector_tool, summary_tool],
+        llm=Settings.llm,
         verbose=True
     )
     agent = AgentRunner(agent_worker)
@@ -229,8 +233,8 @@ def agent_reasoning_loop():
 def agent_reasoning_loop_step():
     vector_tool, summary_tool = get_doc_tools("/Users/Daglas/Downloads/metagpt.pdf", "metagpt")
     agent_worker = FunctionCallingAgentWorker.from_tools(
-        [vector_tool, summary_tool], 
-        llm=Settings.llm, 
+        [vector_tool, summary_tool],
+        llm=Settings.llm,
         verbose=True
     )
     agent = AgentRunner(agent_worker)
@@ -263,8 +267,8 @@ def multi_document_agent_rag():
         paper_to_tools_dict[paper] = [vector_tool, summary_tool]
     initial_tools = [t for paper in papers for t in paper_to_tools_dict[paper]]
     agent_worker = FunctionCallingAgentWorker.from_tools(
-        initial_tools, 
-        llm=Settings.llm, 
+        initial_tools,
+        llm=Settings.llm,
         verbose=True
     )
     agent = AgentRunner(agent_worker)
@@ -280,7 +284,7 @@ def multi_document_agent_rag_rank():
         "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/longlora.pdf",
         "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/selfrag.pdf",
         "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/knowledge_card.pdf",
-        "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/loftq.pdf", 
+        "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/loftq.pdf",
         "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/swebench.pdf",
         "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/zipformer.pdf",
         "/Users/Daglas/dalong.knowledgevideo/DeepLearning-AI/2025006Building-and-Evaluating-Advanced-RAG/papers/values.pdf",
@@ -301,10 +305,10 @@ def multi_document_agent_rag_rank():
     )
     obj_retriever = obj_index.as_retriever(similarity_top_k=3)
     tools = obj_retriever.retrieve("Tell me about the eval dataset used in MetaGPT and SWE-Bench")
-    tools[2].metadata
+    print(tools[2].metadata)
     agent_worker = FunctionCallingAgentWorker.from_tools(
         tool_retriever=obj_retriever,
-        llm=Settings.llm, 
+        llm=Settings.llm,
         system_prompt="""\
 You are an agent designed to answer queries over a set of given papers.
 Please always use the tools provided to answer a question. Do not rely on prior knowledge.\
@@ -319,3 +323,9 @@ Please always use the tools provided to answer a question. Do not rely on prior 
     response = agent.query(
         "Compare and contrast the LoRA papers (LongLoRA, LoftQ). Analyze the approach in each paper first."
     )
+
+if __name__ == "__main__":
+    # 示例调用
+    router_query_engine()
+    # agent_reasoning_loop()
+    # multi_document_agent_rag_rank()
