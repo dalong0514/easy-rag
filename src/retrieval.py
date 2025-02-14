@@ -29,29 +29,10 @@ def retrieval_from_documents(prompt, index_name, similarity_top_k):
 
     response = query_engine.query(prompt)
     print(str(response))
+    # print(len(response.source_nodes))
     for n in response.source_nodes:
         print(n.metadata)
         print(n.text)
         print("----------------------------------------------------------")
-
-    client.close()  # Free up resources
-
-def search_from_weaviate():
-    # 连接本地 Weaviate
-    client = weaviate.connect_to_local()
-
-    vector_store = WeaviateVectorStore(
-        weaviate_client=client, 
-        index_name="AgentRAGDocument"
-    )
-
-    vector_index = VectorStoreIndex.from_vector_store(vector_store)
-    query_engine = vector_index.as_query_engine(similarity_top_k=3)
-
-    response = query_engine.query("How do agents share information with other agents?")
-    print(str(response))
-    for n in response.source_nodes:
-        print(n.metadata)
-    # print(len(response.source_nodes))
 
     client.close()  # Free up resources

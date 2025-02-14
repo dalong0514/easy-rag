@@ -45,67 +45,6 @@ Settings.embed_model = resolve_embed_model("local:/Users/Daglas/dalong.modelsets
 #     model_name=model_name
 # )
 
-def create_document_collection():
-    # 连接本地 Weaviate
-    client = weaviate.connect_to_local()
-    
-    # 创建集合
-    documents = client.collections.create(name="AgentRAGDocument")
-    print("documents collection has been created.")
-
-    client.close()  # Free up resources
-
-def import_vector_document():
-    # 连接本地 Weaviate
-    client = weaviate.connect_to_local()
-
-    # load documents
-    documents = SimpleDirectoryReader(input_files=["../data/papers/metagpt.pdf"]).load_data()
-
-    custom_batch = client.batch.fixed_size(
-        batch_size=1024,
-        concurrent_requests=4,
-        consistency_level=ConsistencyLevel.ALL,
-    )
-    vector_store = WeaviateVectorStore(
-        weaviate_client=client,
-        index_name="AgentRAGDocument",
-        # we pass our custom batch as a client_kwargs
-        client_kwargs={"custom_batch": custom_batch},
-    )
-
-    storage_context = StorageContext.from_defaults(vector_store=vector_store)
-    index = VectorStoreIndex.from_documents(
-        documents, storage_context=storage_context
-    )
-
-    print("All vector data has been written to Weaviate.")
-
-    client.close()  # Free up resources
-
-def search_from_weaviate():
-    # 连接本地 Weaviate
-    client = weaviate.connect_to_local()
-
-    vector_store = WeaviateVectorStore(
-        weaviate_client=client, 
-        index_name="AgentRAGDocument"
-    )
-
-    vector_index = VectorStoreIndex.from_vector_store(vector_store)
-    query_engine = vector_index.as_query_engine(similarity_top_k=3)
-
-    # response = query_engine.query("What is the summary of the document?")
-    # print(str(response))
-    # print(len(response.source_nodes))
-
-    response = query_engine.query("How do agents share information with other agents?")
-    print(str(response))
-    for n in response.source_nodes:
-        print(n.metadata)
-    # print(len(response.source_nodes))
-
-    client.close()  # Free up resources
 
 def get_vector_nodes():
     # load documents
@@ -115,18 +54,6 @@ def get_vector_nodes():
     nodes = splitter.get_nodes_from_documents(documents)
 
     return nodes
-
-def delete_document_collection():
-    """删除 Weaviate 中的集合"""
-    # 连接本地 Weaviate
-    client = weaviate.connect_to_local()
-    
-    # 删除集合
-    client.collections.delete("AgentRAGDocument")
-
-    print("documents collection has been deleted.")
-    
-    client.close()  # 释放资源
 
 def get_router_query_engine():
     nodes = get_vector_nodes()
@@ -164,6 +91,22 @@ def get_router_query_engine():
     )
 
     return query_engine
+
+
+def router_query_engine():
+    query_engine = get_router_query_engine()
+
+    response = query_engine.query("What is the summary of the document?")
+    print(str(response))
+    print(len(response.source_nodes))
+
+    response = query_engine.query("How do agents share information with other agents?")
+    print(len(response.source_nodes))
+    print(str(response))
+
+    response = query_engine.query("Tell me about the ablation study results?")
+    print(len(response.source_nodes))
+    print(str(response))
 
 def add(x: int, y: int) -> int:
     """Adds two integers together."""
@@ -311,21 +254,6 @@ def get_doc_tools(
     )
 
     return vector_query_tool, summary_tool
-
-def router_query_engine():
-    query_engine = get_router_query_engine()
-
-    response = query_engine.query("What is the summary of the document?")
-    print(str(response))
-    print(len(response.source_nodes))
-
-    response = query_engine.query("How do agents share information with other agents?")
-    print(len(response.source_nodes))
-    print(str(response))
-
-    response = query_engine.query("Tell me about the ablation study results?")
-    print(len(response.source_nodes))
-    print(str(response))
 
 def agent_reasoning_loop():
     vector_tool, summary_tool = get_doc_tools("/Users/Daglas/Downloads/metagpt.pdf", "metagpt")
