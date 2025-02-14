@@ -1,6 +1,7 @@
 import weaviate
 from pathlib import Path
 from llama_index.core import SimpleDirectoryReader
+from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core import Settings
 from llama_index.core import VectorStoreIndex
 from llama_index.core.embeddings import resolve_embed_model
@@ -25,7 +26,7 @@ def get_all_files_from_directory(directory_path):
     
     return [str(file) for file in path.glob("*") if file.is_file()]
 
-def create_document_index(input_files, index_name):
+def create_document_index(input_files, index_name, chunk_size=1024, chunk_overlap=200):
     try:
         # 连接本地 Weaviate
         client = weaviate.connect_to_local()
@@ -41,24 +42,21 @@ def create_document_index(input_files, index_name):
 
         # load documents
         documents = SimpleDirectoryReader(input_files=input_files).load_data()
+        # 设置文档分割器
+        splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        nodes = splitter.get_nodes_from_documents(documents)
 
-        custom_batch = client.batch.fixed_size(
-            batch_size=150,
-            concurrent_requests=3,
-            consistency_level=ConsistencyLevel.ALL,
-        )
         vector_store = WeaviateVectorStore(
             weaviate_client=client,
             index_name=index_name,
-            # we pass our custom batch as a client_kwargs
-            client_kwargs={"custom_batch": custom_batch},
         )
 
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
-        index = VectorStoreIndex.from_documents(
-            documents, 
+
+        index = VectorStoreIndex(
+            nodes,
             storage_context=storage_context,
-            show_progress=True  # Add progress visualization
+            show_progress=True  #显示进度
         )
 
         print("All vector data has been written to Weaviate.")
