@@ -45,6 +45,16 @@ Settings.embed_model = resolve_embed_model("local:/Users/Daglas/dalong.modelsets
 #     model_name=model_name
 # )
 
+def create_document_collection():
+    # 连接本地 Weaviate
+    client = weaviate.connect_to_local()
+    
+    # 创建集合
+    documents = client.collections.create(name="AgentRAGDocument")
+    print("documents collection has been created.")
+
+    client.close()  # Free up resources
+
 def import_vector_document():
     # 连接本地 Weaviate
     client = weaviate.connect_to_local()
@@ -69,7 +79,7 @@ def import_vector_document():
         documents, storage_context=storage_context
     )
 
-    print("documents data has been written to Weaviate.")
+    print("All vector data has been written to Weaviate.")
 
     client.close()  # Free up resources
 
@@ -83,33 +93,19 @@ def search_from_weaviate():
     )
 
     vector_index = VectorStoreIndex.from_vector_store(vector_store)
-    vector_query_engine = vector_index.as_query_engine()
+    query_engine = vector_index.as_query_engine(similarity_top_k=3)
 
-    vector_tool = QueryEngineTool.from_defaults(
-        query_engine=vector_query_engine,
-        description=(
-            "Useful for retrieving specific context from the MetaGPT paper."
-        ),
-    )
-
-    query_engine = RouterQueryEngine(
-        selector=LLMSingleSelector.from_defaults(),
-        query_engine_tools=[
-            vector_tool,
-        ],
-        verbose=True
-    )
-
-    response = query_engine.query("What is the summary of the document?")
-    print(str(response))
-    print(len(response.source_nodes))
+    # response = query_engine.query("What is the summary of the document?")
+    # print(str(response))
+    # print(len(response.source_nodes))
 
     response = query_engine.query("How do agents share information with other agents?")
-    print(len(response.source_nodes))
     print(str(response))
+    for n in response.source_nodes:
+        print(n.metadata)
+    # print(len(response.source_nodes))
 
     client.close()  # Free up resources
-
 
 def get_vector_nodes():
     # load documents
@@ -120,27 +116,6 @@ def get_vector_nodes():
 
     return nodes
 
-def create_document_collection():
-    # 连接本地 Weaviate
-    client = weaviate.connect_to_local()
-    
-    # 创建集合
-    documents = client.collections.create(
-        name="AgentRAGDocument",
-        vectorizer_config=Configure.Vectorizer.text2vec_ollama(
-            api_endpoint="http://host.docker.internal:11434",
-            model="bge-m3:latest",
-        ),
-        generative_config=Configure.Generative.ollama(
-            api_endpoint="http://host.docker.internal:11434",
-            model="deepseek-r1:14b",
-        )
-    )
-    print("documents collection has been created.")
-
-    client.close()  # Free up resources
-
-
 def delete_document_collection():
     """删除 Weaviate 中的集合"""
     # 连接本地 Weaviate
@@ -148,6 +123,8 @@ def delete_document_collection():
     
     # 删除集合
     client.collections.delete("AgentRAGDocument")
+
+    print("documents collection has been deleted.")
     
     client.close()  # 释放资源
 
@@ -498,7 +475,7 @@ if __name__ == "__main__":
     # create_document_collection()
     # import_vector_document()
     search_from_weaviate()
-    # delete_document_collection
+    # delete_document_collection()
     # router_query_engine()
     # agent_reasoning_loop()
     # multi_document_agent_rag_rank()
