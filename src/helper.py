@@ -11,6 +11,16 @@ def get_api_key():
     api_key = os.getenv("API_KEY")
     return api_key
 
+def get_api_key_deepseek():
+    load_env()
+    api_key = os.getenv("DEEPSEEK_API_KEY")
+    return api_key
+
+def get_api_key_fireworks():
+    load_env()
+    api_key = os.getenv("FIREWORKs_API_KEY")
+    return api_key
+
 def get_api_key_weaviate():
     load_env()
     api_key = os.getenv("WCD_API_KEY")
