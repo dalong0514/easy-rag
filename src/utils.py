@@ -30,7 +30,7 @@ wcd_api_key = get_api_key_weaviate()
 wcd_url = get_api_key_weaviate()
 
 base_url= "https://api.302.ai/v1"
-model_name = "deepseek-v3-huoshan"
+model_name = "deepseek-v3-aliyun"
 Settings.llm = OpenAI(
     api_base=base_url,
     api_key=api_key,
@@ -400,11 +400,7 @@ def multi_document_agent_rag_rank():
     )
 
 if __name__ == "__main__":
-    # create_document_collection()
-    # import_vector_document()
-    search_from_weaviate()
-    # delete_document_collection()
-    # router_query_engine()
+    router_query_engine()
     # agent_reasoning_loop()
     # multi_document_agent_rag_rank()
     # import_vector_document()
