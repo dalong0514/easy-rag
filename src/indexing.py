@@ -1,5 +1,7 @@
 import os
 import weaviate
+from helper import get_api_key
+from llama_index.llms.openai import OpenAI
 from pathlib import Path
 from llama_index.core import SimpleDirectoryReader, StorageContext, ServiceContext, VectorStoreIndex, load_index_from_storage
 from llama_index.core import Settings
@@ -8,9 +10,14 @@ from llama_index.core.embeddings import resolve_embed_model
 from llama_index.core.indices.postprocessor import SentenceTransformerRerank, MetadataReplacementPostProcessor
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 
-embed_model_name = "local:/Users/Daglas/dalong.modelsets/bge-m3"
-reranker_model_name = "/Users/Daglas/dalong.modelsets/bge-reranker-v2-m3"
-Settings.embed_model = resolve_embed_model(embed_model_name)
+api_key = get_api_key()
+Settings.llm = OpenAI(
+    api_base="https://api.302.ai/v1",
+    api_key=api_key,
+    model_name="deepseek-v3-aliyun"
+)
+
+Settings.embed_model = resolve_embed_model("local:/Users/Daglas/dalong.modelsets/bge-m3")
 
 def get_all_files_from_directory(directory_path):
     """获取指定目录下的所有文件路径
@@ -84,33 +91,32 @@ def delete_document_collection(index_name):
 
 
 # the sentence window retrieval
-def build_sentence_window_index(
-    document, llm, embed_model=embed_model_name, save_dir="sentence_index"
-):
-    # create the sentence window node parser w/ default settings
-    node_parser = SentenceWindowNodeParser.from_defaults(
-        window_size=3,
-        window_metadata_key="window",
-        original_text_metadata_key="original_text",
-    )
-    sentence_context = ServiceContext.from_defaults(
-        llm=llm,
-        embed_model=embed_model,
-        node_parser=node_parser,
-    )
-    if not os.path.exists(save_dir):
-        sentence_index = VectorStoreIndex.from_documents(
-            [document], service_context=sentence_context
-        )
-        sentence_index.storage_context.persist(persist_dir=save_dir)
-    else:
-        sentence_index = load_index_from_storage(
-            StorageContext.from_defaults(persist_dir=save_dir),
-            service_context=sentence_context,
-        )
+# def build_sentence_window_index(
+#     document, llm, embed_model=embed_model_name, save_dir="sentence_index"
+# ):
+#     # create the sentence window node parser w/ default settings
+#     node_parser = SentenceWindowNodeParser.from_defaults(
+#         window_size=3,
+#         window_metadata_key="window",
+#         original_text_metadata_key="original_text",
+#     )
+#     sentence_context = ServiceContext.from_defaults(
+#         llm=llm,
+#         embed_model=embed_model,
+#         node_parser=node_parser,
+#     )
+#     if not os.path.exists(save_dir):
+#         sentence_index = VectorStoreIndex.from_documents(
+#             [document], service_context=sentence_context
+#         )
+#         sentence_index.storage_context.persist(persist_dir=save_dir)
+#     else:
+#         sentence_index = load_index_from_storage(
+#             StorageContext.from_defaults(persist_dir=save_dir),
+#             service_context=sentence_context,
+#         )
 
-    return sentence_index
-
+#     return sentence_index
 
 # for auto-merging retriever
 def build_automerging_index(
@@ -135,21 +141,27 @@ def build_automerging_index(
         # load documents
         documents = SimpleDirectoryReader(input_files=input_files).load_data()
         node_parser = HierarchicalNodeParser.from_defaults(chunk_sizes=chunk_sizes)
-        nodes = node_parser.get_nodes_from_documents(documents)
 
+        # 获取所有节点和叶子节点
+        nodes = node_parser.get_nodes_from_documents(documents)
         leaf_nodes = get_leaf_nodes(nodes)
 
+        # 初始化 Weaviate 向量存储
         vector_store = WeaviateVectorStore(
             weaviate_client=client,
             index_name=index_name,
         )
 
+        # 创建存储上下文，并将所有节点（包括父节点）添加到 docstore 中
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
+        storage_context.docstore.add_documents(nodes)
 
+        # 构建索引时传入叶子节点，同时启用 store_nodes_override，确保索引使用 docstore 中的完整节点信息
         automerging_index = VectorStoreIndex(
-            leaf_nodes, 
-            storage_context=storage_context, 
-            show_progress=True  #显示进度
+            leaf_nodes,
+            storage_context=storage_context,
+            store_nodes_override=True,
+            show_progress=True
         )
 
         print("All vector data has been written to Weaviate.")

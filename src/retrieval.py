@@ -16,6 +16,8 @@ api_key = get_api_key()
 base_url= "http://127.0.0.1:11434/v1"
 model_name = "deepseek-r1:14b"
 
+reranker_model_name = "/Users/Daglas/dalong.modelsets/bge-reranker-v2-m3"
+
 Settings.llm = OpenAI(
     api_base="https://api.302.ai/v1",
     api_key=api_key,
@@ -70,21 +72,62 @@ def basic_query_from_documents(question, index_name, similarity_top_k):
 
 # for auto-merging retriever
 def automerging_query_from_documents(
-    automerging_index,
+    question,
+    index_name,
     similarity_top_k=12,
     rerank_top_n=2,
 ):
-    base_retriever = automerging_index.as_retriever(similarity_top_k=similarity_top_k)
-    retriever = AutoMergingRetriever(
-        base_retriever, automerging_index.storage_context, verbose=True
-    )
-    rerank = SentenceTransformerRerank(
-        top_n=rerank_top_n, model="/Users/Daglas/dalong.modelsets/bge-reranker-v2-m3"
-    )
-    auto_merging_engine = RetrieverQueryEngine.from_args(
-        retriever, node_postprocessors=[rerank]
-    )
-    return auto_merging_engine
+    try:
+        # 连接本地 Weaviate
+        client = weaviate.connect_to_local()
+
+        vector_store = WeaviateVectorStore(
+            weaviate_client=client, 
+            index_name=index_name
+        )
+
+        automerging_index = VectorStoreIndex.from_vector_store(vector_store, store_nodes_override=True)
+
+        base_retriever = automerging_index.as_retriever(similarity_top_k=similarity_top_k)
+
+        retriever = AutoMergingRetriever(
+            base_retriever, 
+            automerging_index.storage_context, 
+            verbose=True
+        )
+        rerank = SentenceTransformerRerank(
+            top_n=rerank_top_n, model="/Users/Daglas/dalong.modelsets/bge-reranker-v2-m3"
+        )
+        auto_merging_engine = RetrieverQueryEngine.from_args(
+            retriever, 
+            node_postprocessors=[rerank]
+        )
+
+        response = auto_merging_engine.query(question)
+        print(response)
+        context = "\n".join([n.text for n in response.source_nodes])
+        source_datas = response.source_nodes
+
+        prompt_template = ChatPromptTemplate.from_messages(
+            [("system", system_template), ("user", "{context}")]
+        )
+        prompt = prompt_template.invoke({"context": context, "question": question})
+
+        response = model.stream(prompt)
+        for chunk in response:
+            print(chunk.content, end='', flush=True)
+        # print(response.content)
+
+        print_data_sources(source_datas)
+
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        raise
+    finally:
+        if 'client' in locals():
+            client.close()  # Ensure client is always closed, Free up resources
+            print("Weaviate connection closed.")
+
 
 
 def sentence_window_query_from_documents(
