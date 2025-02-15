@@ -12,7 +12,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 api_key = get_api_key()
 base_url= "https://api.302.ai/v1"
-model_name = "deepseek-v3-aliyun"
+model_name = "deepseek-r1-huoshan"
 # base_url= "http://127.0.0.1:11434/v1"
 # model_name = "deepseek-r1:14b"
 
@@ -21,7 +21,7 @@ reranker_model_name = "/Users/Daglas/dalong.modelsets/bge-reranker-v2-m3"
 Settings.llm = OpenAI(
     api_base="https://api.302.ai/v1",
     api_key=api_key,
-    model_name="deepseek-v3-aliyun"
+    model_name="deepseek-v3-huoshan"
 )
 
 model = ChatOpenAI(
@@ -140,7 +140,7 @@ def sentence_window_query_from_documents(
     question,
     index_name,
     similarity_top_k=12,
-    rerank_top_n=2,
+    rerank_top_n=4,
 ):
     try:
         # 连接本地 Weaviate

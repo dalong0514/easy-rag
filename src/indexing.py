@@ -12,7 +12,7 @@ from llama_index.vector_stores.weaviate import WeaviateVectorStore
 Settings.embed_model = resolve_embed_model("local:/Users/Daglas/dalong.modelsets/bge-m3")
 
 def get_all_files_from_directory(directory_path):
-    """获取指定目录下的所有文件路径
+    """获取指定目录下的所有文件路径，包括子文件夹中的文件
     
     Args:
         directory_path (str): 目录路径
@@ -24,7 +24,7 @@ def get_all_files_from_directory(directory_path):
     if not path.exists() or not path.is_dir():
         raise ValueError(f"Invalid directory path: {directory_path}")
     
-    return [str(file) for file in path.glob("*") if file.is_file()]
+    return [str(file) for file in path.rglob("*") if file.is_file()]
 
 def build_basic_fixed_size_index(input_files, index_name, chunk_size=1024, chunk_overlap=200):
     try:
@@ -140,7 +140,7 @@ def build_sentence_window_index(input_files, index_name):
         documents = SimpleDirectoryReader(input_files=input_files).load_data()
         # create the sentence window node parser w/ default settings
         node_parser = SentenceWindowNodeParser.from_defaults(
-            window_size=3,
+            window_size=5,
             window_metadata_key="window",
             original_text_metadata_key="original_text",
         )
