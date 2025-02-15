@@ -11,10 +11,10 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 api_key = get_api_key()
-# base_url= "https://api.302.ai/v1"
-# model_name = "deepseek-v3-aliyun"
-base_url= "http://127.0.0.1:11434/v1"
-model_name = "deepseek-r1:14b"
+base_url= "https://api.302.ai/v1"
+model_name = "deepseek-v3-aliyun"
+# base_url= "http://127.0.0.1:11434/v1"
+# model_name = "deepseek-r1:14b"
 
 reranker_model_name = "/Users/Daglas/dalong.modelsets/bge-reranker-v2-m3"
 
@@ -101,9 +101,11 @@ def automerging_query_from_documents(
             automerging_index.storage_context, 
             verbose=True
         )
+
         rerank = SentenceTransformerRerank(
             top_n=rerank_top_n, model=reranker_model_name
         )
+
         auto_merging_engine = RetrieverQueryEngine.from_args(
             retriever, 
             node_postprocessors=[rerank]
@@ -135,20 +137,55 @@ def automerging_query_from_documents(
 
 
 def sentence_window_query_from_documents(
-    sentence_index,
-    similarity_top_k=6,
+    question,
+    index_name,
+    similarity_top_k=12,
     rerank_top_n=2,
 ):
-    # define postprocessors
-    postproc = MetadataReplacementPostProcessor(target_metadata_key="window")
-    rerank = SentenceTransformerRerank(
-        top_n=rerank_top_n, model="/Users/Daglas/dalong.modelsets/bge-reranker-v2-m3"
-    )
+    try:
+        # 连接本地 Weaviate
+        client = weaviate.connect_to_local()
 
-    sentence_window_engine = sentence_index.as_query_engine(
-        similarity_top_k=similarity_top_k, node_postprocessors=[postproc, rerank]
-    )
-    return sentence_window_engine
+        vector_store = WeaviateVectorStore(
+            weaviate_client=client, 
+            index_name=index_name
+        )
+
+        sentence_index = VectorStoreIndex.from_vector_store(vector_store)
+
+        # define postprocessors
+        postproc = MetadataReplacementPostProcessor(target_metadata_key="window")
+        rerank = SentenceTransformerRerank(
+            top_n=rerank_top_n, model=reranker_model_name
+        )
+
+        sentence_window_engine = sentence_index.as_query_engine(
+            similarity_top_k=similarity_top_k, node_postprocessors=[postproc, rerank]
+        )
+
+        response = sentence_window_engine.query(question)
+
+        context = "\n".join([n.text for n in response.source_nodes])
+        source_datas = response.source_nodes
+
+        prompt_template = ChatPromptTemplate.from_messages(
+            [("system", system_template), ("user", "{context}")]
+        )
+        prompt = prompt_template.invoke({"context": context, "question": question})
+
+        response = model.stream(prompt)
+        for chunk in response:
+            print(chunk.content, end='', flush=True)
+
+        print_data_sources(source_datas)
+
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        raise
+    finally:
+        if 'client' in locals():
+            client.close()  # Ensure client is always closed, Free up resources
+            print("Weaviate connection closed.")
 
 
 def retrieval_from_documents_llamaindex(prompt, index_name, similarity_top_k):

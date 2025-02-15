@@ -70,11 +70,7 @@ def build_basic_fixed_size_index(input_files, index_name, chunk_size=1024, chunk
             print("Weaviate connection closed.")
 
 # for auto-merging retriever
-def build_automerging_index(
-    input_files,
-    index_name,
-    chunk_sizes=None,
-):
+def build_automerging_index(input_files, index_name, chunk_sizes=None):
     try:
         # 连接本地 Weaviate
         client = weaviate.connect_to_local()
@@ -124,6 +120,60 @@ def build_automerging_index(
             client.close()  # Ensure client is always closed
             print("Weaviate connection closed.")
 
+
+# the sentence window retrieval
+def build_sentence_window_index(input_files, index_name):
+    try:
+        # 连接本地 Weaviate
+        client = weaviate.connect_to_local()
+
+        # 检查集合是否存在，如果存在则删除
+        if client.collections.exists(index_name):
+            client.collections.delete(index_name)
+            print(f"Existing collection {index_name} has been deleted.")
+        
+        # 创建集合
+        documents = client.collections.create(name=index_name)
+        print("documents collection has been created.")
+
+        # load documents
+        documents = SimpleDirectoryReader(input_files=input_files).load_data()
+        # create the sentence window node parser w/ default settings
+        node_parser = SentenceWindowNodeParser.from_defaults(
+            window_size=3,
+            window_metadata_key="window",
+            original_text_metadata_key="original_text",
+        )
+
+        # 获取所有节点和叶子节点
+        nodes = node_parser.get_nodes_from_documents(documents)
+
+        # 初始化 Weaviate 向量存储
+        vector_store = WeaviateVectorStore(
+            weaviate_client=client,
+            index_name=index_name,
+        )
+
+        # 创建存储上下文
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)
+
+        # 构建索引时传入数据
+        sentence_index = VectorStoreIndex(
+            nodes,
+            storage_context=storage_context,
+            show_progress=True
+        )
+
+        print("All vector data has been written to Weaviate.")
+
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        raise
+    finally:
+        if 'client' in locals():
+            client.close()  # Ensure client is always closed
+            print("Weaviate connection closed.")
+
 def delete_document_collection(index_name):
     """删除 Weaviate 中的集合"""
     # 连接本地 Weaviate
@@ -135,33 +185,3 @@ def delete_document_collection(index_name):
     print("documents collection has been deleted.")
     
     client.close()  # Free up resources
-
-
-# the sentence window retrieval
-# def build_sentence_window_index(
-#     document, llm, embed_model=embed_model_name, save_dir="sentence_index"
-# ):
-#     # create the sentence window node parser w/ default settings
-#     node_parser = SentenceWindowNodeParser.from_defaults(
-#         window_size=3,
-#         window_metadata_key="window",
-#         original_text_metadata_key="original_text",
-#     )
-#     sentence_context = ServiceContext.from_defaults(
-#         llm=llm,
-#         embed_model=embed_model,
-#         node_parser=node_parser,
-#     )
-#     if not os.path.exists(save_dir):
-#         sentence_index = VectorStoreIndex.from_documents(
-#             [document], service_context=sentence_context
-#         )
-#         sentence_index.storage_context.persist(persist_dir=save_dir)
-#     else:
-#         sentence_index = load_index_from_storage(
-#             StorageContext.from_defaults(persist_dir=save_dir),
-#             service_context=sentence_context,
-#         )
-
-#     return sentence_index
-
