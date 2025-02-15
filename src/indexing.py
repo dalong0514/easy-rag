@@ -27,7 +27,7 @@ def get_all_files_from_directory(directory_path):
     
     return [str(file) for file in path.glob("*") if file.is_file()]
 
-def create_document_index(input_files, index_name, chunk_size=1024, chunk_overlap=200):
+def build_basic_fixed_size_index(input_files, index_name, chunk_size=1024, chunk_overlap=200):
     try:
         # 连接本地 Weaviate
         client = weaviate.connect_to_local()
