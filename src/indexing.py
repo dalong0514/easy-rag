@@ -95,7 +95,7 @@ def build_automerging_index(
 
         # 获取所有节点和叶子节点
         nodes = node_parser.get_nodes_from_documents(documents)
-        leaf_nodes = get_leaf_nodes(nodes)
+        # leaf_nodes = get_leaf_nodes(nodes)
 
         # 初始化 Weaviate 向量存储
         vector_store = WeaviateVectorStore(
@@ -105,11 +105,10 @@ def build_automerging_index(
 
         # 创建存储上下文，并将所有节点（包括父节点）添加到 docstore 中
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
-        # storage_context.docstore.add_documents(nodes)
 
         # 构建索引时传入叶子节点，同时启用 store_nodes_override，确保索引使用 docstore 中的完整节点信息
         automerging_index = VectorStoreIndex(
-            leaf_nodes,
+            nodes,
             storage_context=storage_context,
             store_nodes_override=True,
             show_progress=True

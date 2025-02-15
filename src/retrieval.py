@@ -70,6 +70,12 @@ def basic_query_from_documents(question, index_name, similarity_top_k):
             client.close()  # Ensure client is always closed, Free up resources
             print("Weaviate connection closed.")
 
+
+        # query_engine = automerging_index.as_query_engine(similarity_top_k=similarity_top_k)
+        # response = query_engine.query(question)
+        # # print(response.source_nodes)
+        # with open("/Users/Daglas/Downloads/output.json", 'a', encoding='utf-8') as file:
+        #     file.write(str(response.source_nodes) + '\n\n')
 # for auto-merging retriever
 def automerging_query_from_documents(
     question,
@@ -86,13 +92,7 @@ def automerging_query_from_documents(
             index_name=index_name
         )
 
-        automerging_index = VectorStoreIndex.from_vector_store(vector_store, store_nodes_override=True)
-
-        # query_engine = automerging_index.as_query_engine(similarity_top_k=similarity_top_k)
-        # response = query_engine.query(question)
-        # # print(response.source_nodes)
-        # with open("/Users/Daglas/Downloads/output.json", 'a', encoding='utf-8') as file:
-        #     file.write(str(response.source_nodes) + '\n\n')
+        automerging_index = VectorStoreIndex.from_vector_store(vector_store)
 
         base_retriever = automerging_index.as_retriever(similarity_top_k=similarity_top_k)
 
@@ -122,7 +122,6 @@ def automerging_query_from_documents(
         response = model.stream(prompt)
         for chunk in response:
             print(chunk.content, end='', flush=True)
-        # print(response.content)
 
         print_data_sources(source_datas)
 
