@@ -3,6 +3,9 @@ from helper import get_api_key
 from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
 from llama_index.core import VectorStoreIndex
+from llama_index.core.query_engine import RetrieverQueryEngine
+from llama_index.core.retrievers import AutoMergingRetriever
+from llama_index.core.indices.postprocessor import SentenceTransformerRerank
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -64,6 +67,24 @@ def retrieval_from_documents(question, index_name, similarity_top_k):
         if 'client' in locals():
             client.close()  # Ensure client is always closed, Free up resources
             print("Weaviate connection closed.")
+
+# for auto-merging retriever
+def automerging_query_from_documents(
+    automerging_index,
+    similarity_top_k=12,
+    rerank_top_n=2,
+):
+    base_retriever = automerging_index.as_retriever(similarity_top_k=similarity_top_k)
+    retriever = AutoMergingRetriever(
+        base_retriever, automerging_index.storage_context, verbose=True
+    )
+    rerank = SentenceTransformerRerank(
+        top_n=rerank_top_n, model="/Users/Daglas/dalong.modelsets/bge-reranker-v2-m3"
+    )
+    auto_merging_engine = RetrieverQueryEngine.from_args(
+        retriever, node_postprocessors=[rerank]
+    )
+    return auto_merging_engine
 
 
 def retrieval_from_documents_llamaindex(prompt, index_name, similarity_top_k):
