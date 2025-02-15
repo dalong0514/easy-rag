@@ -112,22 +112,6 @@ def build_sentence_window_index(
     return sentence_index
 
 
-def get_sentence_window_query_engine(
-    sentence_index,
-    similarity_top_k=6,
-    rerank_top_n=2,
-):
-    # define postprocessors
-    postproc = MetadataReplacementPostProcessor(target_metadata_key="window")
-    rerank = SentenceTransformerRerank(
-        top_n=rerank_top_n, model="/Users/Daglas/dalong.modelsets/bge-reranker-v2-m3"
-    )
-
-    sentence_window_engine = sentence_index.as_query_engine(
-        similarity_top_k=similarity_top_k, node_postprocessors=[postproc, rerank]
-    )
-    return sentence_window_engine
-
 # for auto-merging retriever
 def build_automerging_index(
     input_files,

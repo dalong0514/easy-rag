@@ -5,14 +5,14 @@ from llama_index.core import Settings
 from llama_index.core import VectorStoreIndex
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.retrievers import AutoMergingRetriever
-from llama_index.core.indices.postprocessor import SentenceTransformerRerank
+from llama_index.core.indices.postprocessor import SentenceTransformerRerank, MetadataReplacementPostProcessor
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 api_key = get_api_key()
 # base_url= "https://api.302.ai/v1"
-# model_name = "deepseek-r1-aliyun"
+# model_name = "deepseek-v3-aliyun"
 base_url= "http://127.0.0.1:11434/v1"
 model_name = "deepseek-r1:14b"
 
@@ -31,7 +31,7 @@ model = ChatOpenAI(
 
 system_template = "You are a helpful AI assistant. Use the following pieces of context to answer the question at the end. If you don't know the answer, just say you don't know. DO NOT try to make up an answer. If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context. {context}  Question: {question} Helpful answer:"
 
-def retrieval_from_documents(question, index_name, similarity_top_k):
+def basic_query_from_documents(question, index_name, similarity_top_k):
     try:
         # 连接本地 Weaviate
         client = weaviate.connect_to_local()
@@ -85,6 +85,23 @@ def automerging_query_from_documents(
         retriever, node_postprocessors=[rerank]
     )
     return auto_merging_engine
+
+
+def sentence_window_query_from_documents(
+    sentence_index,
+    similarity_top_k=6,
+    rerank_top_n=2,
+):
+    # define postprocessors
+    postproc = MetadataReplacementPostProcessor(target_metadata_key="window")
+    rerank = SentenceTransformerRerank(
+        top_n=rerank_top_n, model="/Users/Daglas/dalong.modelsets/bge-reranker-v2-m3"
+    )
+
+    sentence_window_engine = sentence_index.as_query_engine(
+        similarity_top_k=similarity_top_k, node_postprocessors=[postproc, rerank]
+    )
+    return sentence_window_engine
 
 
 def retrieval_from_documents_llamaindex(prompt, index_name, similarity_top_k):
