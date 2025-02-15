@@ -88,6 +88,12 @@ def automerging_query_from_documents(
 
         automerging_index = VectorStoreIndex.from_vector_store(vector_store, store_nodes_override=True)
 
+        # query_engine = automerging_index.as_query_engine(similarity_top_k=similarity_top_k)
+        # response = query_engine.query(question)
+        # # print(response.source_nodes)
+        # with open("/Users/Daglas/Downloads/output.json", 'a', encoding='utf-8') as file:
+        #     file.write(str(response.source_nodes) + '\n\n')
+
         base_retriever = automerging_index.as_retriever(similarity_top_k=similarity_top_k)
 
         retriever = AutoMergingRetriever(
@@ -96,7 +102,7 @@ def automerging_query_from_documents(
             verbose=True
         )
         rerank = SentenceTransformerRerank(
-            top_n=rerank_top_n, model="/Users/Daglas/dalong.modelsets/bge-reranker-v2-m3"
+            top_n=rerank_top_n, model=reranker_model_name
         )
         auto_merging_engine = RetrieverQueryEngine.from_args(
             retriever, 
@@ -104,7 +110,7 @@ def automerging_query_from_documents(
         )
 
         response = auto_merging_engine.query(question)
-        print(response)
+
         context = "\n".join([n.text for n in response.source_nodes])
         source_datas = response.source_nodes
 
@@ -127,7 +133,6 @@ def automerging_query_from_documents(
         if 'client' in locals():
             client.close()  # Ensure client is always closed, Free up resources
             print("Weaviate connection closed.")
-
 
 
 def sentence_window_query_from_documents(
