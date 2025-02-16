@@ -11,11 +11,12 @@ from llama_index.vector_stores.weaviate import WeaviateVectorStore
 
 Settings.embed_model = resolve_embed_model("local:/Users/Daglas/dalong.modelsets/bge-m3")
 
-def get_all_files_from_directory(directory_path):
+def get_all_files_from_directory(directory_path, file_extension=None):
     """获取指定目录下的所有文件路径，包括子文件夹中的文件
     
     Args:
         directory_path (str): 目录路径
+        file_extension (str, optional): 文件扩展名，如"md"。默认为None，表示获取所有文件
     
     Returns:
         list: 包含所有文件路径的列表
@@ -24,7 +25,10 @@ def get_all_files_from_directory(directory_path):
     if not path.exists() or not path.is_dir():
         raise ValueError(f"Invalid directory path: {directory_path}")
     
-    return [str(file) for file in path.rglob("*") if file.is_file()]
+    if file_extension:
+        return [str(file) for file in path.rglob(f"*.{file_extension}") if file.is_file()]
+    else:
+        return [str(file) for file in path.rglob("*") if file.is_file()]
 
 def build_basic_fixed_size_index(input_files, index_name, chunk_size=1024, chunk_overlap=200):
     try:

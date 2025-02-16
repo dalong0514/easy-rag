@@ -16,6 +16,11 @@ def get_api_key_openai():
     api_key = os.getenv("OPENAI_API_KEY")
     return api_key
 
+def get_api_key_google():
+    load_env()
+    api_key = os.getenv("GOOGLE_API_KEY")
+    return api_key
+
 def get_api_key_deepseek():
     load_env()
     api_key = os.getenv("DEEPSEEK_API_KEY")
