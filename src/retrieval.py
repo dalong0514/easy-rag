@@ -16,11 +16,11 @@ base_url= "https://api.302.ai/v1"
 model_name = "deepseek-r1-huoshan"
 reranker_model_name = "/Users/Daglas/dalong.modelsets/bge-reranker-v2-m3"
 
-Settings.llm = OpenAI(
-    api_base="https://api.302.ai/v1",
-    api_key=api_key,
-    model_name="deepseek-v3-huoshan"
-)
+# Settings.llm = OpenAI(
+#     api_base="https://api.302.ai/v1",
+#     api_key=api_key,
+#     model_name="deepseek-v3-huoshan"
+# )
 
 model = ChatOpenAI(
     base_url=base_url,
