@@ -5,7 +5,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
 from llama_index.core import VectorStoreIndex
 from llama_index.core.query_engine import RetrieverQueryEngine
-from llama_index.core.retrievers import AutoMergingRetriever
+from llama_index.core.retrievers import AutoMergingRetriever, BaseRetriever
 from llama_index.core.indices.postprocessor import SentenceTransformerRerank, MetadataReplacementPostProcessor
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 from langchain_openai import ChatOpenAI
@@ -56,8 +56,71 @@ def chat_with_gemini(question, context):
         print(chunk.text, end="", flush=True)
     # print(response.text)
 
+def basic_query_from_documents(question, index_names, similarity_top_k):
+    try:
+        client = weaviate.connect_to_local()
+        
+        if isinstance(index_names, str):
+            index_names = [index_names]
+            
+        vector_indices = []
+        for index_name in index_names:
+            vector_store = WeaviateVectorStore(
+                weaviate_client=client, 
+                index_name=index_name
+            )
+            vector_index = VectorStoreIndex.from_vector_store(vector_store)
+            vector_indices.append(vector_index)
+        
+        # 创建每个索引的检索器
+        retrievers = [index.as_retriever(similarity_top_k=similarity_top_k) for index in vector_indices]
+        
+        # 自定义复合检索器
+        # 修改后的 MultiIndexRetriever 实现
+        class MultiIndexRetriever(BaseRetriever):
+            def __init__(self, retrievers, similarity_top_k):
+                super().__init__()
+                self.retrievers = retrievers
+                self.similarity_top_k = similarity_top_k  # 存储全局 top_k 值
 
-def basic_query_from_documents(question, index_name, similarity_top_k):
+            def _retrieve(self, query, **kwargs):
+                all_nodes = []
+                # 收集所有检索器的节点
+                for retriever in self.retrievers:
+                    retrieved_nodes = retriever.retrieve(query, **kwargs)
+                    all_nodes.extend(retrieved_nodes)
+                
+                # 按相似度分数降序排序（分数越高越相关）
+                sorted_nodes = sorted(all_nodes, key=lambda x: x.score, reverse=True)
+                
+                # 截取前 similarity_top_k 个节点
+                return sorted_nodes[:self.similarity_top_k]
+
+        # 创建复合检索器时传入 similarity_top_k 参数
+        combined_retriever = MultiIndexRetriever(retrievers, similarity_top_k=similarity_top_k)  # 关键修改
+
+        # 创建查询引擎时不需要再设置 similarity_top_k（已在检索器层处理）
+        query_engine = RetrieverQueryEngine.from_args(combined_retriever)
+        
+        response = query_engine.query(question)
+        context = "\n".join([n.text for n in response.source_nodes])
+        source_datas = response.source_nodes
+        
+        print_data_sources(source_datas)
+        print(f"Number of source nodes: {len(source_datas)}")
+        
+        chat_with_llm(question, context)
+
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        raise
+    finally:
+        if 'client' in locals():
+            client.close()
+            print("\nWeaviate connection closed.")
+
+
+def basic_query_from_documents_for_one_collection(question, index_name, similarity_top_k):
     try:
         # 连接本地 Weaviate
         client = weaviate.connect_to_local()
@@ -74,6 +137,7 @@ def basic_query_from_documents(question, index_name, similarity_top_k):
         context = "\n".join([n.text for n in response.source_nodes])
         source_datas = response.source_nodes
         print_data_sources(source_datas)
+        print(f"Number of source nodes: {len(source_datas)}")
 
         chat_with_llm(question, context)
         # chat_with_gemini(question, context)
