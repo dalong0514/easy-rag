@@ -30,6 +30,7 @@ model = ChatOpenAI(
 )
 
 def chat_with_llm(question, context):
+    full_response = ""
     system_template = "You are a helpful AI assistant. Use the following pieces of context to answer the question at the end. If you don't know the answer, just say you don't know. DO NOT try to make up an answer. If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context. {context}  Question: {question} Helpful answer:"
     prompt_template = ChatPromptTemplate.from_messages(
         [("system", system_template), ("user", "{context}")]
@@ -38,7 +39,16 @@ def chat_with_llm(question, context):
     response = model.stream(prompt)
     for chunk in response:
         print(chunk.content, end='', flush=True)
-    # print(response.content)
+        full_response += chunk.content
+    return full_response
+
+def chat_with_llm_pure(question):
+    full_response = ""
+    response = model.stream(question)
+    for chunk in response:
+        print(chunk.content, end='', flush=True)
+        full_response += chunk.content
+    return full_response
 
 # os.environ["http_proxy"] = "http://127.0.0.1:7890"
 # os.environ["https_proxy"] = "http://127.0.0.1:7890"
@@ -56,7 +66,7 @@ def chat_with_gemini(question, context):
         print(chunk.text, end="", flush=True)
     # print(response.text)
 
-def basic_query_from_documents(question, index_names, similarity_top_k):
+def basic_query_from_documents(question, index_names, similarity_top_k, chat_record_file):
     try:
         client = weaviate.connect_to_local()
         
@@ -106,10 +116,12 @@ def basic_query_from_documents(question, index_names, similarity_top_k):
         context = "\n".join([n.text for n in response.source_nodes])
         source_datas = response.source_nodes
         
-        print_data_sources(source_datas)
+        print_data = print_data_sources(source_datas)
         print(f"Number of source nodes: {len(source_datas)}")
         
-        chat_with_llm(question, context)
+        chat_record = chat_with_llm(question, context)
+        with open(chat_record_file, 'w', encoding='utf-8') as f:
+            f.write(f"[question]:\n\n{question}\n\n[answer]:\n\n{chat_record}\n\n[source_datas]:\n\n{print_data}")
 
     except Exception as e:
         print(f"Error occurred: {str(e)}")
@@ -283,12 +295,14 @@ def retrieval_from_documents_llamaindex(prompt, index_name, similarity_top_k):
             print("\nWeaviate connection closed.")
 
 def print_data_sources(source_datas):
+    full_content = ""
     print("\n\nsource_datas----------------------------------------------------------------source_datas")
     for n in source_datas:
         print(n.metadata)
         print(n.text)
         print("----------------------------------------------------------------------------------------")
-
+        full_content += f"{n.metadata}\n\n{n.text}\n----------------------------------------------------------------------------------------\n"
+    return full_content
 
 if __name__ == "__main__":
-    chat_with_gemini("中国唐朝最著名的四位诗人")
+    chat_with_llm_pure("中国唐朝最著名的四位诗人")

@@ -1,5 +1,7 @@
-import os
+import os, time
+import string
 import weaviate
+import json, requests
 from pathlib import Path
 from helper import get_api_key, get_api_key_weaviate, get_wcd_url_weaviate
 from llama_index.llms.openai import OpenAI
@@ -23,7 +25,7 @@ from llama_index.core import StorageContext
 from weaviate.classes.config import Configure
 from weaviate.classes.query import MetadataQuery
 from typing import List, Optional
-import json, requests
+
 
 api_key = get_api_key()
 wcd_api_key = get_api_key_weaviate()
@@ -399,8 +401,40 @@ def multi_document_agent_rag_rank():
         "Analyze the approach in each paper first. "
     )
 
-if __name__ == "__main__":
-    router_query_engine()
-    # agent_reasoning_loop()
-    # multi_document_agent_rag_rank()
-    # import_vector_document()
+def get_chat_file_name(input_str: str) -> str:
+    """处理字符串：
+    1) 剔除所有标点符号
+    2) 截取前6个英文单词或中文字符
+    3) 将空格替换为'-'
+    
+    Args:
+        input_str (str): 输入字符串
+        
+    Returns:
+        str: 处理后的字符串
+    """
+    
+    # 1. 剔除标点符号
+    translator = str.maketrans('', '', string.punctuation)
+    cleaned_str = input_str.translate(translator)
+    
+    # 2. 截取前6个单词/字符
+    # 对于英文：按空格分割取前6个单词
+    if any(char.isalpha() for char in cleaned_str):
+        words = cleaned_str.split()[:5]
+        truncated_str = ' '.join(words)
+    # 对于中文：直接取前6个字符
+    else:
+        truncated_str = cleaned_str[:5]
+    
+    # 3. 将空格替换为'-'
+    final_str = truncated_str.replace(' ', '-')
+
+    timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
+    final_str = f"{timestamp}-{final_str}"
+    
+    return final_str
+
+# if __name__ == "__main__":
+#     result = get_chat_file_name()
+#     print(result)
