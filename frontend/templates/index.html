@@ -29,7 +29,7 @@
 
         <div class="section">
             <h2>输出结果</h2>
-            <pre id="streamOutput" style="background: #f5f5f5; padding: 10px; border-radius: 5px; height: 90vh; overflow-y: auto;"></pre>
+            <pre id="streamOutput" style="background: #f5f5f5; padding: 10px; border-radius: 5px; height: 95vh; overflow-y: auto;"></pre>
         </div>
     </div>
 
@@ -53,7 +53,8 @@
                     },
                     body: JSON.stringify({
                         question: question,
-                        index_names: indexNames
+                        index_names: indexNames,
+                        chat_record_dir: "/Users/Daglas/dalong.github/dalong.chatrecord/chatrecord-origin/" // 添加这个参数
                     })
                 });
 
@@ -76,16 +77,8 @@
                     outputElement.scrollTop = outputElement.scrollHeight;
                 }
                 
-                // 更新查询结果
-                document.getElementById('queryResult').innerHTML = `
-                    <h3>结果：</h3>
-                    <pre>${result}</pre>
-                `;
             } catch (error) {
-                document.getElementById('queryResult').innerHTML = `
-                    <h3>错误：</h3>
-                    <pre>${error.message}</pre>
-                `;
+                document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
             }
         });
 

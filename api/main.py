@@ -1,6 +1,7 @@
 import os, sys
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from src.indexing import build_basic_fixed_size_index, build_automerging_index, build_sentence_window_index
 from src.retrieval import basic_query_from_documents, chat_with_llm_pure
@@ -8,6 +9,9 @@ from src.utils import get_chat_file_name, get_all_files_from_directory
 from typing import Union, List, Optional
 # 将项目根目录添加到 sys.path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from helper import get_api_key, get_api_key_google, get_api_key_grok
 
 app = FastAPI()
 
@@ -19,6 +23,44 @@ app.add_middleware(
     allow_methods=["*"],  # 允许所有方法
     allow_headers=["*"],  # 允许所有头
 )
+
+
+api_key = get_api_key()
+base_url= "https://api.302.ai/v1"
+model_name = "deepseek-r1-huoshan"
+
+
+model = ChatOpenAI(
+    base_url=base_url,
+    api_key=api_key,
+    model_name=model_name,
+    streaming=True
+)
+
+def chat_with_llm(question, context):
+    full_response = ""
+    system_template = "You are a helpful AI assistant. Output in Simplified Chinese. Use the following pieces of context to answer the question at the end. If you don't know the answer, just say you don't know. DO NOT try to make up an answer. If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context. {context}  Question: {question} Helpful answer:"
+    prompt_template = ChatPromptTemplate.from_messages(
+        [("system", system_template), ("user", "{context}")]
+    )
+    prompt = prompt_template.invoke({"context": context, "question": question})
+    response = model.stream(prompt)
+    for chunk in response:
+        print(chunk.content, end='', flush=True)
+        full_response += chunk.content
+    return full_response
+
+def chat_with_llm_pure(question, chat_record_file=None):
+    full_response = ""
+    response = model.stream(question)
+    for chunk in response:
+        print(chunk.content, end='', flush=True)
+        full_response += chunk.content
+    if chat_record_file:
+        with open(chat_record_file, 'w', encoding='utf-8') as f:
+            f.write(f"[question]:\n\n{question}\n\n[answer]:\n\n{full_response}")
+    return full_response
+
 
 class QueryRequest(BaseModel):
     question: str
@@ -48,22 +90,32 @@ async def query_from_documents_api(request: QueryRequest):
             f"{get_chat_file_name(request.question)}.md"
         )
         
-        # Call the basic query function
-        basic_query_from_documents(
-            question=request.question,
-            index_names=request.index_names,
-            similarity_top_k=request.similarity_top_k,
-            chat_record_file=chat_record_file
-        )
-        
-        # Read and return the chat record
-        with open(chat_record_file, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        return {
-            "status": "success",
-            "data": content
-        }
+        async def generate():
+            # Call the basic query function
+            context = basic_query_from_documents(
+                question=request.question,
+                index_names=request.index_names,
+                similarity_top_k=request.similarity_top_k,
+                chat_record_file=chat_record_file
+            )
+            # 流式返回 LLM 的响应
+            full_response = ""
+            system_template = "You are a helpful AI assistant..."
+            prompt_template = ChatPromptTemplate.from_messages(
+                [("system", system_template), ("user", "{context}")]
+            )
+            prompt = prompt_template.invoke({"context": context, "question": request.question})
+            response = model.stream(prompt)
+            
+            for chunk in response:
+                yield chunk.content
+                full_response += chunk.content
+            
+            # 最后写入文件
+            with open(chat_record_file, 'w', encoding='utf-8') as f:
+                f.write(f"[question]:\n\n{request.question}\n\n[answer]:\n\n{full_response}\n\n[source_datas]:\n\n")
+
+        return StreamingResponse(generate(), media_type="text/plain")
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
