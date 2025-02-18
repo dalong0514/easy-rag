@@ -1,10 +1,10 @@
 import os, sys
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from src.indexing import build_basic_fixed_size_index
+from src.indexing import build_basic_fixed_size_index, build_automerging_index, build_sentence_window_index
 from src.retrieval import basic_query_from_documents, chat_with_llm_pure
-from src.utils import get_chat_file_name
-from typing import List, Optional
+from src.utils import get_chat_file_name, get_all_files_from_directory
+from typing import Union, List, Optional
 # 将项目根目录添加到 sys.path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -19,6 +19,15 @@ class QueryRequest(BaseModel):
 class ChatRequest(BaseModel):
     question: str
     chat_record_dir: str = "/Users/Daglas/dalong.github/dalong.chatrecord/chatrecord-origin/"
+
+class BuildIndexRequest(BaseModel):
+    input_path: Union[List[str], str]  # 支持文件路径列表或目录路径
+    index_name: str
+    index_type: str = "basic"  # "basic", "automerging", or "sentence_window"
+    file_extension: Optional[str] = None  # 用于目录扫描时的文件扩展名
+    chunk_size: Optional[int] = 1024
+    chunk_overlap: Optional[int] = 200
+    chunk_sizes: Optional[List[int]] = None
 
 @app.post("/query")
 async def query_from_documents_api(request: QueryRequest):
@@ -71,6 +80,55 @@ async def chat_with_llm_api(request: ChatRequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/build-index")
+async def build_index_api(request: BuildIndexRequest):
+    try:
+        # 处理输入路径
+        if isinstance(request.input_path, str):
+            # 如果是目录路径，使用 get_all_files_from_directory
+            input_files = get_all_files_from_directory(
+                request.input_path,
+                file_extension=request.file_extension
+            )
+        else:
+            # 如果是文件路径列表，直接使用
+            input_files = request.input_path
+
+        if not input_files:
+            raise ValueError("No valid input files found")
+
+        # 根据索引类型调用相应的构建函数
+        if request.index_type == "basic":
+            build_basic_fixed_size_index(
+                input_files=input_files,
+                index_name=request.index_name,
+                chunk_size=request.chunk_size,
+                chunk_overlap=request.chunk_overlap
+            )
+        elif request.index_type == "automerging":
+            build_automerging_index(
+                input_files=input_files,
+                index_name=request.index_name,
+                chunk_sizes=request.chunk_sizes
+            )
+        elif request.index_type == "sentence_window":
+            build_sentence_window_index(
+                input_files=input_files,
+                index_name=request.index_name
+            )
+        else:
+            raise ValueError(f"Invalid index type: {request.index_type}")
+        
+        return {
+            "status": "success",
+            "message": f"Index '{request.index_name}' built successfully",
+            "num_files": len(input_files)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn

@@ -440,6 +440,26 @@ def get_chat_file_name(input_str: str) -> str:
     
     return final_str
 
+def get_all_files_from_directory(directory_path, file_extension=None):
+    """获取指定目录下的所有文件路径，包括子文件夹中的文件
+    
+    Args:
+        directory_path (str): 目录路径
+        file_extension (str, optional): 文件扩展名，如"md"。默认为None，表示获取所有文件
+    
+    Returns:
+        list: 包含所有文件路径的列表
+    """
+    path = Path(directory_path)
+    if not path.exists() or not path.is_dir():
+        raise ValueError(f"Invalid directory path: {directory_path}")
+    
+    if file_extension:
+        return [str(file) for file in path.rglob(f"*.{file_extension}") if file.is_file()]
+    else:
+        return [str(file) for file in path.rglob("*") if file.is_file()]
+
+
 if __name__ == "__main__":
     result = get_chat_file_name("储罐隔热层相关计算时，什么是隔热层的折减系数Ri")
     print(result)
