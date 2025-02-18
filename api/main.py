@@ -1,5 +1,6 @@
 import os, sys
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from src.indexing import build_basic_fixed_size_index, build_automerging_index, build_sentence_window_index
 from src.retrieval import basic_query_from_documents, chat_with_llm_pure
@@ -9,6 +10,15 @@ from typing import Union, List, Optional
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 app = FastAPI()
+
+# 添加 CORS 中间件
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有来源，生产环境应指定具体域名
+    allow_credentials=True,
+    allow_methods=["*"],  # 允许所有方法
+    allow_headers=["*"],  # 允许所有头
+)
 
 class QueryRequest(BaseModel):
     question: str

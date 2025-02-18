@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API 调用界面</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>API 调用界面</h1>
+        
+        <div class="section">
+            <h2>查询文档</h2>
+            <form id="queryForm">
+                <textarea id="question" placeholder="输入你的问题..."></textarea>
+                <input type="text" id="indexNames" placeholder="输入索引名称（逗号分隔）">
+                <button type="submit">查询</button>
+            </form>
+            <div id="queryResult"></div>
+        </div>
+
+        <div class="section">
+            <h2>与 LLM 聊天</h2>
+            <form id="chatForm">
+                <textarea id="chatQuestion" placeholder="输入你的问题..."></textarea>
+                <button type="submit">发送</button>
+            </form>
+            <div id="chatResult"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        // 添加 JavaScript 代码来处理表单提交和 API 调用
+        document.getElementById('queryForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+    
+            const question = document.getElementById('question').value;
+            const indexNames = document.getElementById('indexNames').value.split(',');
+
+            try {
+                const response = await axios.post('http://localhost:8001/query', {
+                    question: question,
+                    index_names: indexNames
+                });
+                
+                document.getElementById('queryResult').innerHTML = `
+                    <h3>结果：</h3>
+                    <pre>${response.data.data}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('queryResult').innerHTML = `
+                    <h3>错误：</h3>
+                    <pre>${error.response.data.detail}</pre>
+                `;
+            }
+        });
+
+        document.getElementById('chatForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const question = document.getElementById('chatQuestion').value;
+
+            try {
+                const response = await axios.post('http://localhost:8001/chat', {
+                    question: question
+                });
+                
+                document.getElementById('chatResult').innerHTML = `
+                    <h3>结果：</h3>
+                    <pre>${response.data.data}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('chatResult').innerHTML = `
+                    <h3>错误：</h3>
+                    <pre>${error.response.data.detail}</pre>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
