@@ -120,13 +120,9 @@ def basic_query_from_documents(question, index_names, similarity_top_k, chat_rec
         query_engine = RetrieverQueryEngine.from_args(combined_retriever)
         
         response = query_engine.query(question)
-        context = "\n".join([n.text for n in response.source_nodes])
-        source_datas = response.source_nodes
-        
-        print_data = print_data_sources(source_datas)
-        print(f"Number of source nodes: {len(source_datas)}")
-        return context
 
+        return response.source_nodes
+    
     except Exception as e:
         print(f"Error occurred: {str(e)}")
         raise
@@ -134,73 +130,6 @@ def basic_query_from_documents(question, index_names, similarity_top_k, chat_rec
         if 'client' in locals():
             client.close()
             print("\nWeaviate connection closed.")
-
-
-def basic_query_from_documents_old(question, index_names, similarity_top_k, chat_record_file):
-    try:
-        client = weaviate.connect_to_local()
-        
-        if isinstance(index_names, str):
-            index_names = [index_names]
-            
-        vector_indices = []
-        for index_name in index_names:
-            vector_store = WeaviateVectorStore(
-                weaviate_client=client, 
-                index_name=index_name
-            )
-            vector_index = VectorStoreIndex.from_vector_store(vector_store)
-            vector_indices.append(vector_index)
-        
-        # 创建每个索引的检索器
-        retrievers = [index.as_retriever(similarity_top_k=similarity_top_k) for index in vector_indices]
-        
-        # 自定义复合检索器
-        # 修改后的 MultiIndexRetriever 实现
-        class MultiIndexRetriever(BaseRetriever):
-            def __init__(self, retrievers, similarity_top_k):
-                super().__init__()
-                self.retrievers = retrievers
-                self.similarity_top_k = similarity_top_k  # 存储全局 top_k 值
-
-            def _retrieve(self, query, **kwargs):
-                all_nodes = []
-                # 收集所有检索器的节点
-                for retriever in self.retrievers:
-                    retrieved_nodes = retriever.retrieve(query, **kwargs)
-                    all_nodes.extend(retrieved_nodes)
-                
-                # 按相似度分数降序排序（分数越高越相关）
-                sorted_nodes = sorted(all_nodes, key=lambda x: x.score, reverse=True)
-                
-                # 截取前 similarity_top_k 个节点
-                return sorted_nodes[:self.similarity_top_k]
-
-        # 创建复合检索器时传入 similarity_top_k 参数
-        combined_retriever = MultiIndexRetriever(retrievers, similarity_top_k=similarity_top_k)  # 关键修改
-
-        # 创建查询引擎时不需要再设置 similarity_top_k（已在检索器层处理）
-        query_engine = RetrieverQueryEngine.from_args(combined_retriever)
-        
-        response = query_engine.query(question)
-        context = "\n".join([n.text for n in response.source_nodes])
-        source_datas = response.source_nodes
-        
-        print_data = print_data_sources(source_datas)
-        print(f"Number of source nodes: {len(source_datas)}")
-        
-        chat_record = chat_with_llm(question, context)
-        with open(chat_record_file, 'w', encoding='utf-8') as f:
-            f.write(f"[question]:\n\n{question}\n\n[answer]:\n\n{chat_record}\n\n[source_datas]:\n\n{print_data}")
-
-    except Exception as e:
-        print(f"Error occurred: {str(e)}")
-        raise
-    finally:
-        if 'client' in locals():
-            client.close()
-            print("\nWeaviate connection closed.")
-
 
 def basic_query_from_documents_for_one_collection(question, index_name, similarity_top_k):
     try:
@@ -216,13 +145,8 @@ def basic_query_from_documents_for_one_collection(question, index_name, similari
         query_engine = vector_index.as_query_engine(similarity_top_k=similarity_top_k)
 
         response = query_engine.query(question)
-        context = "\n".join([n.text for n in response.source_nodes])
-        source_datas = response.source_nodes
-        print_data_sources(source_datas)
-        print(f"Number of source nodes: {len(source_datas)}")
 
-        chat_with_llm(question, context)
-        # chat_with_gemini(question, context)
+        return response.source_nodes
 
     except Exception as e:
         print(f"Error occurred: {str(e)}")
@@ -262,12 +186,7 @@ def sentence_window_query_from_documents(
 
         response = sentence_window_engine.query(question)
 
-        context = "\n".join([n.text for n in response.source_nodes])
-        source_datas = response.source_nodes
-
-        print_data_sources(source_datas)
-
-        chat_with_llm(question, context)
+        return response.source_nodes
 
     except Exception as e:
         print(f"Error occurred: {str(e)}")
@@ -314,12 +233,7 @@ def automerging_query_from_documents(
 
         response = auto_merging_engine.query(question)
 
-        context = "\n".join([n.text for n in response.source_nodes])
-        source_datas = response.source_nodes
-
-        print_data_sources(source_datas)
-
-        chat_with_llm(question, context)
+        return response.source_nodes
 
     except Exception as e:
         print(f"Error occurred: {str(e)}")
@@ -334,43 +248,6 @@ def automerging_query_from_documents(
         # with open("/Users/Daglas/Downloads/output.json", 'a', encoding='utf-8') as file:
         #     file.write(str(response.source_nodes) + '\n\n')
 
-
-def retrieval_from_documents_llamaindex(prompt, index_name, similarity_top_k):
-    try:
-        # 连接本地 Weaviate
-        client = weaviate.connect_to_local()
-
-        vector_store = WeaviateVectorStore(
-            weaviate_client=client, 
-            index_name=index_name
-        )
-
-        vector_index = VectorStoreIndex.from_vector_store(vector_store)
-        query_engine = vector_index.as_query_engine(similarity_top_k=similarity_top_k)
-
-        response = query_engine.query(prompt)
-        print(str(response))
-        # print(len(response.source_nodes))
-        for n in response.source_nodes:
-            print(n.metadata)
-            print(n.text)
-            print("----------------------------------------------------------------------------------------")
-
-    except Exception as e:
-        print(f"Error occurred: {str(e)}")
-        raise
-    finally:
-        if 'client' in locals():
-            client.close()  # Ensure client is always closed, Free up resources
-            print("\nWeaviate connection closed.")
-
-def print_data_sources(source_datas):
-    full_content = ""
-    print("\n\nsource_datas----------------------------------------------------------------source_datas")
-    for n in source_datas:
-        full_content += f"score: {n.score}\n\n{n.metadata}\n\n{n.text}\n----------------------------------------------------------------------------------------\n"
-        print(f"{n.score}\n\n{n.metadata}\n\n{n.text}\n----------------------------------------------------------------------------------------\n")
-    return full_content
 
 if __name__ == "__main__":
     chat_with_llm_pure("中国唐朝最著名的四位诗人")

@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from src.indexing import build_basic_fixed_size_index, build_automerging_index, build_sentence_window_index
 from src.retrieval import basic_query_from_documents, chat_with_llm_pure
-from src.utils import get_chat_file_name, get_all_files_from_directory
+from src.utils import get_chat_file_name, get_all_files_from_directory, print_data_sources
 from typing import Union, List, Optional
 # 将项目根目录添加到 sys.path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -92,12 +92,18 @@ async def query_from_documents_api(request: QueryRequest):
         
         async def generate():
             # Call the basic query function
-            context = basic_query_from_documents(
+            source_nodes = basic_query_from_documents(
                 question=request.question,
                 index_names=request.index_names,
                 similarity_top_k=request.similarity_top_k,
                 chat_record_file=chat_record_file
             )
+
+            context = "\n".join([n.text for n in source_nodes])
+            
+            print_data = print_data_sources(source_nodes)
+            print(f"Number of source nodes: {len(source_nodes)}")
+
             # 流式返回 LLM 的响应
             full_response = ""
             system_template = "You are a helpful AI assistant..."
@@ -113,7 +119,7 @@ async def query_from_documents_api(request: QueryRequest):
             
             # 最后写入文件
             with open(chat_record_file, 'w', encoding='utf-8') as f:
-                f.write(f"[question]:\n\n{request.question}\n\n[answer]:\n\n{full_response}\n\n[source_datas]:\n\n")
+                f.write(f"[question]:\n\n{request.question}\n\n[answer]:\n\n{full_response}\n\n[source_datas]:\n\n{print_data}")
 
         return StreamingResponse(generate(), media_type="text/plain")
         

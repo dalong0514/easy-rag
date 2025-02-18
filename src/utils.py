@@ -459,6 +459,14 @@ def get_all_files_from_directory(directory_path, file_extension=None):
     else:
         return [str(file) for file in path.rglob("*") if file.is_file()]
 
+def print_data_sources(source_datas):
+    full_content = ""
+    print("\n\nsource_datas----------------------------------------------------------------source_datas")
+    for n in source_datas:
+        full_content += f"score: {n.score}\n\n{n.metadata}\n\n{n.text}\n----------------------------------------------------------------------------------------\n"
+        print(f"{n.score}\n\n{n.metadata}\n\n{n.text}\n----------------------------------------------------------------------------------------\n")
+    return full_content
+
 
 if __name__ == "__main__":
     result = get_chat_file_name("储罐隔热层相关计算时，什么是隔热层的折减系数Ri")
