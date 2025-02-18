@@ -1,6 +1,5 @@
 import weaviate, os
 import google.generativeai as genai
-from helper import get_api_key, get_api_key_google, get_api_key_grok
 from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
 from llama_index.core import VectorStoreIndex
@@ -10,6 +9,7 @@ from llama_index.core.indices.postprocessor import SentenceTransformerRerank, Me
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
+from helper import get_api_key, get_api_key_google, get_api_key_grok
 
 # api_key = get_api_key_grok()
 # base_url= "https://api.x.ai/v1"

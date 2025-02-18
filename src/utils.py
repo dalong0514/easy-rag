@@ -3,7 +3,6 @@ import string
 import weaviate
 import json, requests
 from pathlib import Path
-from helper import get_api_key, get_api_key_weaviate, get_wcd_url_weaviate
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.gemini import Gemini
 from llama_index.core import SimpleDirectoryReader
@@ -25,6 +24,7 @@ from llama_index.core import StorageContext
 from weaviate.classes.config import Configure
 from weaviate.classes.query import MetadataQuery
 from typing import List, Optional
+from helper import get_api_key, get_api_key_weaviate, get_wcd_url_weaviate
 
 
 api_key = get_api_key()

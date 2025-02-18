@@ -11,3 +11,5 @@ langchain-openai==0.3.35
 trulens_eval==1.4.0
 trulens-providers-openai==1.4.0
 trulens-apps-llamaindex==1.4.0
+fastapi==0.115.8
+uvicorn==0.34.0
