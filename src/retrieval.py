@@ -42,12 +42,15 @@ def chat_with_llm(question, context):
         full_response += chunk.content
     return full_response
 
-def chat_with_llm_pure(question):
+def chat_with_llm_pure(question, chat_record_file=None):
     full_response = ""
     response = model.stream(question)
     for chunk in response:
         print(chunk.content, end='', flush=True)
         full_response += chunk.content
+    if chat_record_file:
+        with open(chat_record_file, 'w', encoding='utf-8') as f:
+            f.write(f"[question]:\n\n{question}\n\n[answer]:\n\n{full_response}")
     return full_response
 
 # os.environ["http_proxy"] = "http://127.0.0.1:7890"
@@ -119,9 +122,9 @@ def basic_query_from_documents(question, index_names, similarity_top_k, chat_rec
         print_data = print_data_sources(source_datas)
         print(f"Number of source nodes: {len(source_datas)}")
         
-        chat_record = chat_with_llm(question, context)
-        with open(chat_record_file, 'w', encoding='utf-8') as f:
-            f.write(f"[question]:\n\n{question}\n\n[answer]:\n\n{chat_record}\n\n[source_datas]:\n\n{print_data}")
+        # chat_record = chat_with_llm(question, context)
+        # with open(chat_record_file, 'w', encoding='utf-8') as f:
+        #     f.write(f"[question]:\n\n{question}\n\n[answer]:\n\n{chat_record}\n\n[source_datas]:\n\n{print_data}")
 
     except Exception as e:
         print(f"Error occurred: {str(e)}")
@@ -298,10 +301,8 @@ def print_data_sources(source_datas):
     full_content = ""
     print("\n\nsource_datas----------------------------------------------------------------source_datas")
     for n in source_datas:
-        print(n.metadata)
-        print(n.text)
-        print("----------------------------------------------------------------------------------------")
-        full_content += f"{n.metadata}\n\n{n.text}\n----------------------------------------------------------------------------------------\n"
+        full_content += f"{n.score}\n\n{n.metadata}\n\n{n.text}\n----------------------------------------------------------------------------------------\n"
+        print(f"{n.score}\n\n{n.metadata}\n\n{n.text}\n----------------------------------------------------------------------------------------\n")
     return full_content
 
 if __name__ == "__main__":
