@@ -414,8 +414,13 @@ def get_chat_file_name(input_str: str) -> str:
         str: 处理后的字符串
     """
     
-    # 1. 剔除标点符号
-    translator = str.maketrans('', '', string.punctuation)
+    # 1. 剔除标点符号（包括中文和英文）
+    # 定义中文标点符号集合
+    chinese_punctuation = '，。！？；：（）《》【】“”‘’、·…—'
+    # 合并英文和中文标点符号
+    all_punctuation = string.punctuation + chinese_punctuation
+    # 创建翻译表并删除所有标点符号
+    translator = str.maketrans('', '', all_punctuation)
     cleaned_str = input_str.translate(translator)
     
     # 2. 截取前6个单词/字符
@@ -435,6 +440,6 @@ def get_chat_file_name(input_str: str) -> str:
     
     return final_str
 
-# if __name__ == "__main__":
-#     result = get_chat_file_name()
-#     print(result)
+if __name__ == "__main__":
+    result = get_chat_file_name("储罐隔热层相关计算时，什么是隔热层的折减系数Ri")
+    print(result)

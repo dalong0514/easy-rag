@@ -21,6 +21,11 @@ def get_api_key_google():
     api_key = os.getenv("GOOGLE_API_KEY")
     return api_key
 
+def get_api_key_grok():
+    load_env()
+    api_key = os.getenv("GROK_API_KEY")
+    return api_key
+
 def get_api_key_deepseek():
     load_env()
     api_key = os.getenv("DEEPSEEK_API_KEY")
