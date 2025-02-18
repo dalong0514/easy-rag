@@ -1,9 +1,10 @@
 import os, sys
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from src.indexing import build_basic_fixed_size_index
 from src.retrieval import basic_query_from_documents, chat_with_llm_pure
 from src.utils import get_chat_file_name
-from typing import List
+from typing import List, Optional
 # 将项目根目录添加到 sys.path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -15,8 +16,12 @@ class QueryRequest(BaseModel):
     similarity_top_k: int = 12
     chat_record_dir: str = "/Users/Daglas/dalong.github/dalong.chatrecord/chatrecord-origin/"
 
+class ChatRequest(BaseModel):
+    question: str
+    chat_record_dir: str = "/Users/Daglas/dalong.github/dalong.chatrecord/chatrecord-origin/"
+
 @app.post("/query")
-async def query_documents(request: QueryRequest):
+async def query_from_documents_api(request: QueryRequest):
     try:
         # Generate chat record file path
         chat_record_file = os.path.join(
@@ -39,6 +44,29 @@ async def query_documents(request: QueryRequest):
         return {
             "status": "success",
             "data": content
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/chat")
+async def chat_with_llm_api(request: ChatRequest):
+    try:
+        # Generate chat record file path if directory is provided
+        chat_record_file = os.path.join(
+            request.chat_record_dir,
+            f"{get_chat_file_name(request.question)}.md"
+        )
+
+        # Call the chat function
+        response = chat_with_llm_pure(
+            question=request.question,
+            chat_record_file=chat_record_file
+        )
+        
+        return {
+            "status": "success",
+            "data": response
         }
         
     except Exception as e:

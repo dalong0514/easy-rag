@@ -17,7 +17,7 @@ from helper import get_api_key, get_api_key_google, get_api_key_grok
 
 api_key = get_api_key()
 base_url= "https://api.302.ai/v1"
-model_name = "deepseek-v3-huoshan"
+model_name = "deepseek-r1-huoshan"
 reranker_model_name = "/Users/Daglas/dalong.modelsets/bge-reranker-v2-m3"
 
 # Settings.llm = OpenAI(
