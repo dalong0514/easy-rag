@@ -106,7 +106,7 @@ button:hover {
     border-radius: 5px;
     height: 70vh;
     overflow-y: auto;
-    white-space: pre-wrap;
+    white-space: normal;
     word-wrap: break-word;
     font-family: monospace;
     font-size: 14px;
