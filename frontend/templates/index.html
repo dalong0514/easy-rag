@@ -33,7 +33,7 @@
 
             <div class="output-section">
                 <div class="section">
-                    <h2>输出结果</h2>
+                    <h2>输出结果 <button id="copyButton" style="float: right;">复制结果</button></h2> <!-- 复制按钮移到标题右侧 -->
                     <pre id="streamOutput"></pre>
                 </div>
             </div>
@@ -53,6 +53,22 @@
                 button.disabled = false;
             }
         }
+
+        // 复制结果到剪贴板
+        document.getElementById('copyButton').addEventListener('click', function() {
+            const outputText = document.getElementById('streamOutput').textContent;
+            if (outputText) {
+                navigator.clipboard.writeText(outputText)
+                    .then(function() {
+                        alert('已复制到剪贴板');
+                    })
+                    .catch(function(error) {
+                        alert('复制失败: ' + error);
+                    });
+            } else {
+                alert('没有内容可复制');
+            }
+        });
 
         document.getElementById('queryForm').addEventListener('submit', async function(e) {
             e.preventDefault();
