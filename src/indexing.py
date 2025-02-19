@@ -1,7 +1,5 @@
 import os
 import weaviate
-from llama_index.llms.openai import OpenAI
-from pathlib import Path
 from llama_index.core import SimpleDirectoryReader, StorageContext, ServiceContext, VectorStoreIndex, load_index_from_storage
 from llama_index.core import Settings
 from llama_index.core.node_parser import SentenceSplitter, HierarchicalNodeParser, SentenceWindowNodeParser, get_leaf_nodes
@@ -170,3 +168,6 @@ def delete_document_collection(index_name):
     print("documents collection has been deleted.")
     
     client.close()  # Free up resources
+
+if __name__ == "__main__":
+    delete_document_collection("xx")
