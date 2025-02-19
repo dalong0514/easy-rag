@@ -27,7 +27,7 @@
                     <form id="queryForm">
                         <textarea id="question" placeholder="输入你的问题..."></textarea>
                         <button type="submit" id="queryButton">查询</button>
-                        <input type="number" id="similarityTopK" placeholder="输入similarity_top_k（默认12）" value="12">
+                        <input type="number" id="similarityTopK" placeholder="输入similarity_top_k（默认10）" value="10">
                     </form>
                     <div id="queryResult"></div>
                 </div>
@@ -66,7 +66,9 @@
         }
     
         // 修改流式输出部分
+        let currentContent = ''; // 用于存储当前 content
         function updateStreamOutput(content) {
+            currentContent = content; // 更新当前 content
             const outputElement = document.getElementById('streamOutput');
             outputElement.innerHTML = marked.parse(content);
             outputElement.scrollTop = outputElement.scrollHeight;
@@ -74,9 +76,8 @@
     
         // 复制结果到剪贴板
         document.getElementById('copyButton').addEventListener('click', function() {
-            const outputText = document.getElementById('streamOutput').textContent;
-            if (outputText) {
-                navigator.clipboard.writeText(outputText)
+            if (currentContent) {
+                navigator.clipboard.writeText(currentContent)
                     .then(function() {
                         alert('已复制到剪贴板');
                     })
