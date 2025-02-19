@@ -82,13 +82,10 @@ async def query_from_documents_api(request: QueryRequest):
 
             # 流式返回 LLM 的响应
             full_response = ""
-            # system_template = "You are a helpful AI assistant.... Reply in Simplified Chinese. {context}  Question: {question} Helpful answer:"
-            system_template = '''
-            You are a helpful AI assistant. Reply in Simplified Chinese. Use the following pieces of context to answer the question at the end. If you don't know the answer, just say you don't know. DO NOT try to make up an answer. If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context. {context}  Question: {question} Helpful answer:
-            '''
-            prompt_template = ChatPromptTemplate.from_messages(
-                [("system", system_template), ("user", "{context}")]
-            )
+            prompt_template = ChatPromptTemplate([
+                ("system", "You are a helpful AI assistant..."),
+                ("user", "Use the following pieces of context to answer the question at the end.\n{context}\nQuestion: {question} ")
+            ])
             prompt = prompt_template.invoke({"context": context, "question": request.question})
             response = model.stream(prompt)
             
