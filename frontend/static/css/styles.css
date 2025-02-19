@@ -49,16 +49,17 @@ body {
 
 /* 修改输入框样式 */
 #indexNames {
-    width: 200px;  /* 设置固定宽度 */
+    width: 252px;  /* 设置固定宽度 */
     height: 30px;  /* 与按钮高度保持一致 */
     padding: 10px;
     box-sizing: border-box;
     font-size: 14px;
     margin-bottom: 10px;
+    margin-left: 10px;  /* 添加左边距 */
 }
 
 #similarityTopK {
-    width: 100px;
+    width: 60px;
     height: 30px;
     padding: 10px;
     box-sizing: border-box;
@@ -75,7 +76,12 @@ button {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    width: 20%;
+    width: auto;  /* 改为自动宽度 */
+    min-width: 100px;  /* 设置最小宽度 */
+    font-size: 14px; /* 增加字体大小 */
+    display: inline-flex;  /* 改为 inline-flex */
+    align-items: center;
+    justify-content: center;
 }
 
 button:hover {
