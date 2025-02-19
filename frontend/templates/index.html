@@ -14,7 +14,7 @@
                     <h2>查询文档</h2>
                     <form id="queryForm">
                         <textarea id="question" placeholder="输入你的问题..."></textarea>
-                        <button type="submit">查询</button>
+                        <button type="submit" id="queryButton">查询</button>
                         <input type="text" id="indexNames" placeholder="输入索引名称（逗号分隔）">
                         <input type="number" id="similarityTopK" placeholder="输入similarity_top_k（默认12）" value="12">
                     </form>
@@ -25,7 +25,7 @@
                     <h2>与 LLM 聊天</h2>
                     <form id="chatForm">
                         <textarea id="chatQuestion" placeholder="输入你的问题..."></textarea>
-                        <button type="submit">发送</button>
+                        <button type="submit" id="chatButton">发送</button>
                     </form>
                     <div id="chatResult"></div>
                 </div>
@@ -43,8 +43,22 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         // 添加 JavaScript 代码来处理表单提交和 API 调用
+        // 切换按钮状态的函数
+        function toggleButtonState(button, isLoading) {
+            if (isLoading) {
+                button.textContent = '请求中...';
+                button.disabled = true;
+            } else {
+                button.textContent = '查询';
+                button.disabled = false;
+            }
+        }
+
         document.getElementById('queryForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            const button = document.getElementById('queryButton');
+            toggleButtonState(button, true); // 请求中，禁用按钮
             
             const question = document.getElementById('question').value;
             const indexNames = document.getElementById('indexNames').value.split(',');
@@ -88,11 +102,16 @@
                 
             } catch (error) {
                 document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
+            } finally {
+                toggleButtonState(button, false); // 请求完成，恢复按钮状态
             }
         });
 
         document.getElementById('chatForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            const button = document.getElementById('chatButton');
+            toggleButtonState(button, true); // 请求中，禁用按钮
             
             const question = document.getElementById('chatQuestion').value;
 
@@ -132,6 +151,8 @@
                 
             } catch (error) {
                 document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
+            } finally {
+                toggleButtonState(button, false); // 请求完成，恢复按钮状态
             }
         });
     </script>
