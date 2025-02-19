@@ -111,3 +111,30 @@ button:hover {
     font-family: monospace;
     font-size: 14px;
 }
+
+#indexList {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.index-item {
+    padding: 8px;
+    margin: 4px 0;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.index-item:hover {
+    background-color: #e9ecef;
+}
+
+.loading {
+    text-align: center;
+    color: #666;
+    padding: 10px;
+}

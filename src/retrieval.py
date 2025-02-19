@@ -17,6 +17,7 @@ def get_all_index_names():
         names = []
         for name in collections:
             names.append(name)
+        names.sort()  # 按字母顺序排序
         return names
     except Exception as e:
         print(f"Error listing index names: {str(e)}")

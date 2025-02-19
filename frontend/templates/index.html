@@ -12,6 +12,12 @@
         <div class="layout">
             <div class="input-section">
                 <div class="section">
+                    <h2>索引列表</h2>
+                    <div id="indexList">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+                <div class="section">
                     <h2>查询文档</h2>
                     <form id="queryForm">
                         <textarea id="question" placeholder="输入你的问题..."></textarea>
@@ -179,6 +185,52 @@
                 toggleButtonState(button, false); // 请求完成，恢复按钮状态
             }
         });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to load index names
+            async function loadIndexNames() {
+                try {
+                    const response = await fetch('http://localhost:8001/get-index-names', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({})
+                    });
+                    
+                    const data = await response.json();
+                    const indexList = document.getElementById('indexList');
+                    
+                    if (data.status === 'success' && data.index_names.length > 0) {
+                        indexList.innerHTML = data.index_names.map(name => 
+                            `<div class="index-item">${name}</div>`
+                        ).join('');
+                        
+                        // Add click event to index items
+                        document.querySelectorAll('.index-item').forEach(item => {
+                            item.addEventListener('click', function() {
+                                const indexNamesInput = document.getElementById('indexNames');
+                                const currentIndexes = indexNamesInput.value ? indexNamesInput.value.split(',') : [];
+                                
+                                if (!currentIndexes.includes(this.textContent)) {
+                                    currentIndexes.push(this.textContent);
+                                    indexNamesInput.value = currentIndexes.join(',');
+                                }
+                            });
+                        });
+                    } else {
+                        indexList.innerHTML = '<div class="no-data">没有可用的索引</div>';
+                    }
+                } catch (error) {
+                    console.error('Error loading index names:', error);
+                    document.getElementById('indexList').innerHTML = '<div class="error">加载索引列表失败</div>';
+                }
+            }
+
+            // Load index names when page loads
+            loadIndexNames();
+        });
+
     </script>
 </body>
 </html>
