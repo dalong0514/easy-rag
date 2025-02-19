@@ -11,7 +11,7 @@ from typing import Union, List, Optional
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from helper import get_api_key, get_api_key_google, get_api_key_grok
+from helper import get_api_key
 
 app = FastAPI()
 
@@ -24,38 +24,9 @@ app.add_middleware(
     allow_headers=["*"],  # 允许所有头
 )
 
-
-# api_key = get_api_key_grok()
-# base_url= "https://api.x.ai/v1"
-# model_name = "grok-2-1212"
-
-# Settings.llm = OpenAI(
-#     api_base="https://api.302.ai/v1",
-#     api_key=api_key,
-#     model_name="deepseek-v3-huoshan"
-# )
-
-# os.environ["http_proxy"] = "http://127.0.0.1:7890"
-# os.environ["https_proxy"] = "http://127.0.0.1:7890"
-# api_key_google = get_api_key_google()
-# genai.configure(api_key=api_key_google, transport="rest")
-# gemini_model = genai.GenerativeModel(
-#     model_name = "gemini-2.0-flash-thinking-exp-01-21",
-# )
-# def chat_with_gemini(question, context):
-#     system_template = f"You are a helpful AI assistant. Use the following pieces of context to answer the question at the end. If you don't know the answer, just say you don't know. DO NOT try to make up an answer. If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context. Question: {question} context: {context}  Helpful answer:"
-#     response = gemini_model.generate_content(
-#                 contents=system_template, 
-#                 stream=True)
-#     for chunk in response:
-#         print(chunk.text, end="", flush=True)
-#     print(response.text)
-
-
 api_key = get_api_key()
 base_url= "https://api.302.ai/v1"
 model_name = "deepseek-r1-huoshan"
-
 
 model = ChatOpenAI(
     base_url=base_url,
@@ -63,31 +34,6 @@ model = ChatOpenAI(
     model_name=model_name,
     streaming=True
 )
-
-def chat_with_llm(question, context):
-    full_response = ""
-    system_template = "You are a helpful AI assistant. Output in Simplified Chinese. Use the following pieces of context to answer the question at the end. If you don't know the answer, just say you don't know. DO NOT try to make up an answer. If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context. {context}  Question: {question} Helpful answer:"
-    prompt_template = ChatPromptTemplate.from_messages(
-        [("system", system_template), ("user", "{context}")]
-    )
-    prompt = prompt_template.invoke({"context": context, "question": question})
-    response = model.stream(prompt)
-    for chunk in response:
-        print(chunk.content, end='', flush=True)
-        full_response += chunk.content
-    return full_response
-
-def chat_with_llm_pure(question, chat_record_file=None):
-    full_response = ""
-    response = model.stream(question)
-    for chunk in response:
-        print(chunk.content, end='', flush=True)
-        full_response += chunk.content
-    if chat_record_file:
-        with open(chat_record_file, 'w', encoding='utf-8') as f:
-            f.write(f"[question]:\n\n{question}\n\n[answer]:\n\n{full_response}")
-    return full_response
-
 
 class QueryRequest(BaseModel):
     question: str
@@ -136,7 +82,10 @@ async def query_from_documents_api(request: QueryRequest):
 
             # 流式返回 LLM 的响应
             full_response = ""
-            system_template = "You are a helpful AI assistant..."
+            # system_template = "You are a helpful AI assistant.... Reply in Simplified Chinese. {context}  Question: {question} Helpful answer:"
+            system_template = '''
+            You are a helpful AI assistant. Reply in Simplified Chinese. Use the following pieces of context to answer the question at the end. If you don't know the answer, just say you don't know. DO NOT try to make up an answer. If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context. {context}  Question: {question} Helpful answer:
+            '''
             prompt_template = ChatPromptTemplate.from_messages(
                 [("system", system_template), ("user", "{context}")]
             )

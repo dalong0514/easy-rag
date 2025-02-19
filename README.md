@@ -1,4 +1,4 @@
-# Agent-RAG: High-Quality Retrieval-Augmented Generation System
+# Easy-RAG: High-Quality Retrieval-Augmented Generation System
 
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://github.com/yourusername/agent-rag/blob/main/LICENSE)
 [![GitHub Repo stars](https://img.shields.io/github/stars/yourusername/agent-rag?style=social)](https://github.com/yourusername/agent-rag/stargazers)
@@ -15,7 +15,7 @@
 
 ## Overview
 
-Agent-RAG is a high-quality, agent-based Retrieval-Augmented Generation (RAG) system designed for efficient and accurate document retrieval and question answering. The system leverages advanced techniques such as hierarchical node parsing, sentence window indexing, and auto-merging retrieval to provide precise and context-aware responses. With its modular architecture and flexible configuration, Agent-RAG is suitable for various applications, including academic research, enterprise knowledge management, and automated customer support.
+easy-rag is a high-quality Retrieval-Augmented Generation (RAG) system designed for efficient and accurate document retrieval and question answering. The system leverages advanced techniques such as hierarchical node parsing, sentence window indexing, and auto-merging retrieval to provide precise and context-aware responses. With its modular architecture and flexible configuration, Agent-RAG is suitable for various applications, including academic research, enterprise knowledge management, and automated customer support.
 
 Key Features:
 - **Accurate Question Answering**: Utilizes advanced indexing and retrieval techniques for precise responses.

@@ -65,6 +65,12 @@ def basic_query_from_documents(question, index_names, similarity_top_k):
                 
                 # 截取前 similarity_top_k 个节点
                 return sorted_nodes[:self.similarity_top_k]
+                # top_k_nodes = sorted_nodes[:self.similarity_top_k]
+                
+                # # 剔除score值低于0.4的节点
+                # filtered_nodes = [node for node in top_k_nodes if node.score >= 0.4]
+                
+                # return filtered_nodes
 
         # 创建复合检索器时传入 similarity_top_k 参数
         combined_retriever = MultiIndexRetriever(retrievers, similarity_top_k=similarity_top_k)  # 关键修改
