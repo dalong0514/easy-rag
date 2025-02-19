@@ -136,16 +136,19 @@ async def chat_with_llm_api(request: ChatRequest):
             f"{get_chat_file_name(request.question)}.md"
         )
 
-        # Call the chat function
-        response = chat_with_llm_pure(
-            question=request.question,
-            chat_record_file=chat_record_file
-        )
-        
-        return {
-            "status": "success",
-            "data": response
-        }
+        async def generate():
+            full_response = ""
+            response = model.stream(request.question)
+            
+            for chunk in response:
+                yield chunk.content
+                full_response += chunk.content
+            
+            # 最后写入文件
+            with open(chat_record_file, 'w', encoding='utf-8') as f:
+                f.write(f"[question]:\n\n{request.question}\n\n[answer]:\n\n{full_response}")
+
+        return StreamingResponse(generate(), media_type="text/plain")
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

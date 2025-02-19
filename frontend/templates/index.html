@@ -87,20 +87,42 @@
             
             const question = document.getElementById('chatQuestion').value;
 
+            // 清空之前的输出
+            document.getElementById('streamOutput').textContent = '';
+            
             try {
-                const response = await axios.post('http://localhost:8001/chat', {
-                    question: question
+                const response = await fetch('http://localhost:8001/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        chat_record_dir: "/Users/Daglas/dalong.github/dalong.chatrecord/chatrecord-origin/"
+                    })
                 });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let result = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value, { stream: true });
+                    result += chunk;
+                    
+                    // 更新流式输出到 streamOutput
+                    document.getElementById('streamOutput').textContent = result;
+                    
+                    // 自动滚动到底部
+                    const outputElement = document.getElementById('streamOutput');
+                    outputElement.scrollTop = outputElement.scrollHeight;
+                }
                 
-                document.getElementById('chatResult').innerHTML = `
-                    <h3>结果：</h3>
-                    <pre>${response.data.data}</pre>
-                `;
             } catch (error) {
-                document.getElementById('chatResult').innerHTML = `
-                    <h3>错误：</h3>
-                    <pre>${error.response.data.detail}</pre>
-                `;
+                document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
             }
         });
     </script>
