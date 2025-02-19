@@ -434,11 +434,14 @@ def get_chat_file_name(input_str: str) -> str:
     
     # 3. 将空格替换为'-'
     final_str = truncated_str.replace(' ', '-')
-
-    timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
-    final_str = f"{timestamp}-{final_str}"
     
     return final_str
+
+
+def get_timestamp():
+    timestamp = time.strftime("%Y%m%d%H%M%S", time.localtime())
+    return timestamp
+
 
 def get_all_files_from_directory(directory_path, file_extension=None):
     """获取指定目录下的所有文件路径，包括子文件夹中的文件

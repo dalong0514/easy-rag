@@ -8,28 +8,34 @@
     <div class="container">
         <h1>API 调用界面</h1>
         
-        <div class="section">
-            <h2>查询文档</h2>
-            <form id="queryForm">
-                <textarea id="question" placeholder="输入你的问题..."></textarea>
-                <button type="submit">查询</button>
-                <input type="text" id="indexNames" placeholder="输入索引名称（逗号分隔）">
-            </form>
-            <div id="queryResult"></div>
-        </div>
+        <div class="layout">
+            <div class="input-section">
+                <div class="section">
+                    <h2>查询文档</h2>
+                    <form id="queryForm">
+                        <textarea id="question" placeholder="输入你的问题..."></textarea>
+                        <button type="submit">查询</button>
+                        <input type="text" id="indexNames" placeholder="输入索引名称（逗号分隔）">
+                    </form>
+                    <div id="queryResult"></div>
+                </div>
 
-        <div class="section">
-            <h2>与 LLM 聊天</h2>
-            <form id="chatForm">
-                <textarea id="chatQuestion" placeholder="输入你的问题..."></textarea>
-                <button type="submit">发送</button>
-            </form>
-            <div id="chatResult"></div>
-        </div>
+                <div class="section">
+                    <h2>与 LLM 聊天</h2>
+                    <form id="chatForm">
+                        <textarea id="chatQuestion" placeholder="输入你的问题..."></textarea>
+                        <button type="submit">发送</button>
+                    </form>
+                    <div id="chatResult"></div>
+                </div>
+            </div>
 
-        <div class="section">
-            <h2>输出结果</h2>
-            <pre id="streamOutput" style="background: #f5f5f5; padding: 10px; border-radius: 5px; height: 95vh; overflow-y: auto;"></pre>
+            <div class="output-section">
+                <div class="section">
+                    <h2>输出结果</h2>
+                    <pre id="streamOutput"></pre>
+                </div>
+            </div>
         </div>
     </div>
 

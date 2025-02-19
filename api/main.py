@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from src.indexing import build_basic_fixed_size_index, build_automerging_index, build_sentence_window_index
 from src.retrieval import basic_query_from_documents, chat_with_llm_pure
-from src.utils import get_chat_file_name, get_all_files_from_directory, print_data_sources
+from src.utils import get_chat_file_name, get_all_files_from_directory, print_data_sources, get_timestamp
 from typing import Union, List, Optional
 # 将项目根目录添加到 sys.path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -84,10 +84,10 @@ class BuildIndexRequest(BaseModel):
 @app.post("/query")
 async def query_from_documents_api(request: QueryRequest):
     try:
-        # Generate chat record file path
+        file_name = f"{get_timestamp()}RAG-{get_chat_file_name(request.question)}"
         chat_record_file = os.path.join(
             request.chat_record_dir,
-            f"{get_chat_file_name(request.question)}.md"
+            f"{file_name}.md"
         )
         
         async def generate():
@@ -130,10 +130,10 @@ async def query_from_documents_api(request: QueryRequest):
 @app.post("/chat")
 async def chat_with_llm_api(request: ChatRequest):
     try:
-        # Generate chat record file path if directory is provided
+        file_name = f"{get_timestamp()}Chat-{get_chat_file_name(request.question)}"
         chat_record_file = os.path.join(
             request.chat_record_dir,
-            f"{get_chat_file_name(request.question)}.md"
+            f"{file_name}.md"
         )
 
         async def generate():
@@ -146,7 +146,7 @@ async def chat_with_llm_api(request: ChatRequest):
             
             # 最后写入文件
             with open(chat_record_file, 'w', encoding='utf-8') as f:
-                f.write(f"[question]:\n\n{request.question}\n\n[answer]:\n\n{full_response}")
+                f.write(f"{file_name}\n\n[question]:\n\n{request.question}\n\n[answer]:\n\n{full_response}")
 
         return StreamingResponse(generate(), media_type="text/plain")
         
