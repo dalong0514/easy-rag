@@ -105,7 +105,8 @@ async def query_from_documents_api(request: QueryRequest):
             print(f"Number of source nodes: {len(source_nodes)}")
 
             # 流式返回 LLM 的响应
-            full_response = ""
+            # full_response = ""
+            full_response = print_data
             system_template = "You are a helpful AI assistant..."
             prompt_template = ChatPromptTemplate.from_messages(
                 [("system", system_template), ("user", "{context}")]
