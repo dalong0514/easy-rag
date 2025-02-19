@@ -32,6 +32,7 @@ model = ChatOpenAI(
     base_url=base_url,
     api_key=api_key,
     model_name=model_name,
+    temperature=0.6,
     streaming=True
 )
 
