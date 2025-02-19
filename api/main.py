@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from src.indexing import build_basic_fixed_size_index, build_automerging_index, build_sentence_window_index
-from src.retrieval import basic_query_from_documents
+from src.retrieval import basic_query_from_documents, get_all_index_names
 from src.utils import get_chat_file_name, get_all_files_from_directory, print_data_sources, get_timestamp
 from typing import Union, List, Optional
 # 将项目根目录添加到 sys.path
@@ -108,6 +108,10 @@ class BuildIndexRequest(BaseModel):
     chunk_overlap: Optional[int] = 200
     chunk_sizes: Optional[List[int]] = None
 
+class GetIndexNamesRequest(BaseModel):
+    pass
+
+
 @app.post("/query")
 async def query_from_documents_api(request: QueryRequest):
     try:
@@ -152,6 +156,7 @@ async def query_from_documents_api(request: QueryRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/chat")
 async def chat_with_llm_api(request: ChatRequest):
     try:
@@ -177,6 +182,7 @@ async def chat_with_llm_api(request: ChatRequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/build-index")
 async def build_index_api(request: BuildIndexRequest):
@@ -223,6 +229,18 @@ async def build_index_api(request: BuildIndexRequest):
             "num_files": len(input_files)
         }
         
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/get-index-names")
+async def get_index_names_api(request: GetIndexNamesRequest):
+    try:
+        index_names = get_all_index_names()
+        return {
+            "status": "success",
+            "index_names": index_names
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
