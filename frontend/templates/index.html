@@ -54,7 +54,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
-        // 添加 JavaScript 代码来处理表单提交和 API 调用
         // 切换按钮状态的函数
         function toggleButtonState(button, isLoading) {
             if (isLoading) {
@@ -65,14 +64,14 @@
                 button.disabled = false;
             }
         }
-
+    
         // 修改流式输出部分
         function updateStreamOutput(content) {
             const outputElement = document.getElementById('streamOutput');
             outputElement.innerHTML = marked.parse(content);
             outputElement.scrollTop = outputElement.scrollHeight;
         }
-
+    
         // 复制结果到剪贴板
         document.getElementById('copyButton').addEventListener('click', function() {
             const outputText = document.getElementById('streamOutput').textContent;
@@ -88,109 +87,7 @@
                 alert('没有内容可复制');
             }
         });
-
-        document.getElementById('queryForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const button = document.getElementById('queryButton');
-            toggleButtonState(button, true); // 请求中，禁用按钮
-            
-            const question = document.getElementById('question').value;
-            const indexNames = document.getElementById('indexNames').value.split(',');
-            const similarityTopK = parseInt(document.getElementById('similarityTopK').value) || 12;
-
-            // 清空之前的输出
-            document.getElementById('streamOutput').textContent = '';
-            
-            try {
-                const response = await fetch('http://localhost:8001/query', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        question: question,
-                        index_names: indexNames,
-                        similarity_top_k: similarityTopK,
-                        chat_record_dir: "/Users/Daglas/dalong.github/dalong.chatrecord/chatrecord-origin/" // 添加这个参数
-                    })
-                });
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let result = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    
-                    const chunk = decoder.decode(value, { stream: true });
-                    result += chunk;
-                    
-                    // 更新流式输出
-                    updateStreamOutput(result);
-                    
-                    // 自动滚动到底部
-                    const outputElement = document.getElementById('streamOutput');
-                    outputElement.scrollTop = outputElement.scrollHeight;
-                }
-                
-            } catch (error) {
-                document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
-            } finally {
-                toggleButtonState(button, false); // 请求完成，恢复按钮状态
-            }
-        });
-
-        document.getElementById('chatForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const button = document.getElementById('chatButton');
-            toggleButtonState(button, true); // 请求中，禁用按钮
-            
-            const question = document.getElementById('chatQuestion').value;
-
-            // 清空之前的输出
-            document.getElementById('streamOutput').textContent = '';
-            
-            try {
-                const response = await fetch('http://localhost:8001/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        question: question,
-                        chat_record_dir: "/Users/Daglas/dalong.github/dalong.chatrecord/chatrecord-origin/"
-                    })
-                });
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let result = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    
-                    const chunk = decoder.decode(value, { stream: true });
-                    result += chunk;
-                    
-                    // 更新流式输出到 streamOutput
-                    updateStreamOutput(result);
-                    
-                    // 自动滚动到底部
-                    const outputElement = document.getElementById('streamOutput');
-                    outputElement.scrollTop = outputElement.scrollHeight;
-                }
-                
-            } catch (error) {
-                document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
-            } finally {
-                toggleButtonState(button, false); // 请求完成，恢复按钮状态
-            }
-        });
-
+    
         document.addEventListener('DOMContentLoaded', function() {
             // Function to load index names
             async function loadIndexNames() {
@@ -216,62 +113,60 @@
                             item.addEventListener('click', function() {
                                 // 切换选中状态
                                 this.classList.toggle('selected');
-                                
-                                // 获取所有选中的索引
-                                const selectedIndexes = Array.from(document.querySelectorAll('.index-item.selected'))
-                                    .map(item => item.textContent);
-                                
-                                // 更新查询表单的提交处理
-                                document.getElementById('queryForm').onsubmit = async function(e) {
-                                    e.preventDefault();
-                                    
-                                    const button = document.getElementById('queryButton');
-                                    toggleButtonState(button, true);
-                                    
-                                    const question = document.getElementById('question').value;
-                                    const similarityTopK = parseInt(document.getElementById('similarityTopK').value) || 12;
-
-                                    // 清空之前的输出
-                                    document.getElementById('streamOutput').textContent = '';
-                                    
-                                    try {
-                                        const response = await fetch('http://localhost:8001/query', {
-                                            method: 'POST',
-                                            headers: {
-                                                'Content-Type': 'application/json'
-                                            },
-                                            body: JSON.stringify({
-                                                question: question,
-                                                index_names: selectedIndexes, // 使用选中的索引数组
-                                                similarity_top_k: similarityTopK,
-                                                chat_record_dir: "/Users/Daglas/dalong.github/dalong.chatrecord/chatrecord-origin/"
-                                            })
-                                        });
-
-                                        const reader = response.body.getReader();
-                                        const decoder = new TextDecoder();
-                                        let result = '';
-
-                                        while (true) {
-                                            const { done, value } = await reader.read();
-                                            if (done) break;
-                                            
-                                            const chunk = decoder.decode(value, { stream: true });
-                                            result += chunk;
-                                            
-                                            updateStreamOutput(result);
-                                            
-                                            const outputElement = document.getElementById('streamOutput');
-                                            outputElement.scrollTop = outputElement.scrollHeight;
-                                        }
-                                        
-                                    } catch (error) {
-                                        document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
-                                    } finally {
-                                        toggleButtonState(button, false);
-                                    }
-                                };
                             });
+                        });
+    
+                        // 绑定查询表单提交事件
+                        document.getElementById('queryForm').addEventListener('submit', async function(e) {
+                            e.preventDefault();
+                            
+                            const button = document.getElementById('queryButton');
+                            toggleButtonState(button, true);
+                            
+                            const question = document.getElementById('question').value;
+                            const similarityTopK = parseInt(document.getElementById('similarityTopK').value) || 12;
+                            const selectedIndexes = Array.from(document.querySelectorAll('.index-item.selected'))
+                                .map(item => item.textContent);
+    
+                            // 清空之前的输出
+                            document.getElementById('streamOutput').textContent = '';
+                            
+                            try {
+                                const response = await fetch('http://localhost:8001/query', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        question: question,
+                                        index_names: selectedIndexes,
+                                        similarity_top_k: similarityTopK,
+                                        chat_record_dir: "/Users/Daglas/dalong.github/dalong.chatrecord/chatrecord-origin/"
+                                    })
+                                });
+    
+                                const reader = response.body.getReader();
+                                const decoder = new TextDecoder();
+                                let result = '';
+    
+                                while (true) {
+                                    const { done, value } = await reader.read();
+                                    if (done) break;
+                                    
+                                    const chunk = decoder.decode(value, { stream: true });
+                                    result += chunk;
+                                    
+                                    updateStreamOutput(result);
+                                    
+                                    const outputElement = document.getElementById('streamOutput');
+                                    outputElement.scrollTop = outputElement.scrollHeight;
+                                }
+                                
+                            } catch (error) {
+                                document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
+                            } finally {
+                                toggleButtonState(button, false);
+                            }
                         });
                     } else {
                         indexList.innerHTML = '<div class="no-data">没有可用的索引</div>';
@@ -281,11 +176,10 @@
                     document.getElementById('indexList').innerHTML = '<div class="error">加载索引列表失败</div>';
                 }
             }
-
+    
             // Load index names when page loads
             loadIndexNames();
         });
-
     </script>
 </body>
 </html>
