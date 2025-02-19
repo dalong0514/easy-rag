@@ -127,7 +127,14 @@
                             const similarityTopK = parseInt(document.getElementById('similarityTopK').value) || 12;
                             const selectedIndexes = Array.from(document.querySelectorAll('.index-item.selected'))
                                 .map(item => item.textContent);
-    
+
+                            // 添加检查：如果 selectedIndexes 为空
+                            if (selectedIndexes.length === 0) {
+                                alert('请至少选择一个索引！');
+                                toggleButtonState(button, false);
+                                return;
+                            }
+
                             // 清空之前的输出
                             document.getElementById('streamOutput').textContent = '';
                             
