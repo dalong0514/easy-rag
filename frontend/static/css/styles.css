@@ -73,17 +73,6 @@ body {
     height: 270px;  /* 聊天输入框高度 */
 }
 
-/* 修改输入框样式 */
-#indexNames {
-    width: 100px;  /* 设置固定宽度 */
-    height: 30px;  /* 与按钮高度保持一致 */
-    padding: 10px;
-    box-sizing: border-box;
-    font-size: 14px;
-    margin-bottom: 10px;
-    margin-left: 10px;  /* 添加左边距 */
-}
-
 #similarityTopK {
     width: 60px;
     height: 30px;
@@ -151,4 +140,13 @@ button:hover {
     text-align: center;
     color: #666;
     padding: 10px;
+}
+
+.index-item.selected {
+    background-color: #007bff;
+    color: white;
+}
+
+.index-item.selected:hover {
+    background-color: #0056b3;
 }

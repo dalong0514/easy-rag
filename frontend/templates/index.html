@@ -27,7 +27,6 @@
                     <form id="queryForm">
                         <textarea id="question" placeholder="输入你的问题..."></textarea>
                         <button type="submit" id="queryButton">查询</button>
-                        <input type="text" id="indexNames" placeholder="输入索引名称（逗号分隔）">
                         <input type="number" id="similarityTopK" placeholder="输入similarity_top_k（默认12）" value="12">
                     </form>
                     <div id="queryResult"></div>
@@ -215,13 +214,63 @@
                         // Add click event to index items
                         document.querySelectorAll('.index-item').forEach(item => {
                             item.addEventListener('click', function() {
-                                const indexNamesInput = document.getElementById('indexNames');
-                                const currentIndexes = indexNamesInput.value ? indexNamesInput.value.split(',') : [];
+                                // 切换选中状态
+                                this.classList.toggle('selected');
                                 
-                                if (!currentIndexes.includes(this.textContent)) {
-                                    currentIndexes.push(this.textContent);
-                                    indexNamesInput.value = currentIndexes.join(',');
-                                }
+                                // 获取所有选中的索引
+                                const selectedIndexes = Array.from(document.querySelectorAll('.index-item.selected'))
+                                    .map(item => item.textContent);
+                                
+                                // 更新查询表单的提交处理
+                                document.getElementById('queryForm').onsubmit = async function(e) {
+                                    e.preventDefault();
+                                    
+                                    const button = document.getElementById('queryButton');
+                                    toggleButtonState(button, true);
+                                    
+                                    const question = document.getElementById('question').value;
+                                    const similarityTopK = parseInt(document.getElementById('similarityTopK').value) || 12;
+
+                                    // 清空之前的输出
+                                    document.getElementById('streamOutput').textContent = '';
+                                    
+                                    try {
+                                        const response = await fetch('http://localhost:8001/query', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json'
+                                            },
+                                            body: JSON.stringify({
+                                                question: question,
+                                                index_names: selectedIndexes, // 使用选中的索引数组
+                                                similarity_top_k: similarityTopK,
+                                                chat_record_dir: "/Users/Daglas/dalong.github/dalong.chatrecord/chatrecord-origin/"
+                                            })
+                                        });
+
+                                        const reader = response.body.getReader();
+                                        const decoder = new TextDecoder();
+                                        let result = '';
+
+                                        while (true) {
+                                            const { done, value } = await reader.read();
+                                            if (done) break;
+                                            
+                                            const chunk = decoder.decode(value, { stream: true });
+                                            result += chunk;
+                                            
+                                            updateStreamOutput(result);
+                                            
+                                            const outputElement = document.getElementById('streamOutput');
+                                            outputElement.scrollTop = outputElement.scrollHeight;
+                                        }
+                                        
+                                    } catch (error) {
+                                        document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
+                                    } finally {
+                                        toggleButtonState(button, false);
+                                    }
+                                };
                             });
                         });
                     } else {
