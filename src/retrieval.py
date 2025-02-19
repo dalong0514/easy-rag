@@ -1,79 +1,31 @@
 import weaviate, os
-import google.generativeai as genai
-from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
 from llama_index.core import VectorStoreIndex
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.retrievers import AutoMergingRetriever, BaseRetriever
 from llama_index.core.indices.postprocessor import SentenceTransformerRerank, MetadataReplacementPostProcessor
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from helper import get_api_key, get_api_key_google, get_api_key_grok
 
-# api_key = get_api_key_grok()
-# base_url= "https://api.x.ai/v1"
-# model_name = "grok-2-1212"
-
-api_key = get_api_key()
-base_url= "https://api.302.ai/v1"
-model_name = "deepseek-r1-huoshan"
 reranker_model_name = "/Users/Daglas/dalong.modelsets/bge-reranker-v2-m3"
 
-# Settings.llm = OpenAI(
-#     api_base="https://api.302.ai/v1",
-#     api_key=api_key,
-#     model_name="deepseek-v3-huoshan"
-# )
+def get_all_index_names():
+    try:
+        client = weaviate.connect_to_local()
+        # 直接获取集合名称列表（字符串列表）
+        collections = client.collections.list_all()  # 直接返回字符串列表
+        print("Available index names in Weaviate:")
+        names = []
+        for name in collections:
+            names.append(name)
+        return names
+    except Exception as e:
+        print(f"Error listing index names: {str(e)}")
+        return []
+    finally:
+        if 'client' in locals():
+            client.close()
 
-model = ChatOpenAI(
-    base_url=base_url,
-    api_key=api_key,
-    model_name=model_name,
-    streaming=True
-)
-
-def chat_with_llm(question, context):
-    full_response = ""
-    system_template = "You are a helpful AI assistant. Output in Simplified Chinese. Use the following pieces of context to answer the question at the end. If you don't know the answer, just say you don't know. DO NOT try to make up an answer. If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context. {context}  Question: {question} Helpful answer:"
-    prompt_template = ChatPromptTemplate.from_messages(
-        [("system", system_template), ("user", "{context}")]
-    )
-    prompt = prompt_template.invoke({"context": context, "question": question})
-    response = model.stream(prompt)
-    for chunk in response:
-        print(chunk.content, end='', flush=True)
-        full_response += chunk.content
-    return full_response
-
-def chat_with_llm_pure(question, chat_record_file=None):
-    full_response = ""
-    response = model.stream(question)
-    for chunk in response:
-        print(chunk.content, end='', flush=True)
-        full_response += chunk.content
-    if chat_record_file:
-        with open(chat_record_file, 'w', encoding='utf-8') as f:
-            f.write(f"[question]:\n\n{question}\n\n[answer]:\n\n{full_response}")
-    return full_response
-
-# os.environ["http_proxy"] = "http://127.0.0.1:7890"
-# os.environ["https_proxy"] = "http://127.0.0.1:7890"
-api_key_google = get_api_key_google()
-genai.configure(api_key=api_key_google, transport="rest")
-gemini_model = genai.GenerativeModel(
-    model_name = "gemini-2.0-flash-thinking-exp-01-21",
-)
-def chat_with_gemini(question, context):
-    system_template = f"You are a helpful AI assistant. Use the following pieces of context to answer the question at the end. If you don't know the answer, just say you don't know. DO NOT try to make up an answer. If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context. Question: {question} context: {context}  Helpful answer:"
-    response = gemini_model.generate_content(
-                contents=system_template, 
-                stream=True)
-    for chunk in response:
-        print(chunk.text, end="", flush=True)
-    # print(response.text)
-
-def basic_query_from_documents(question, index_names, similarity_top_k, chat_record_file):
+def basic_query_from_documents(question, index_names, similarity_top_k):
     try:
         client = weaviate.connect_to_local()
         
@@ -250,4 +202,5 @@ def automerging_query_from_documents(
 
 
 if __name__ == "__main__":
-    chat_with_llm_pure("中国唐朝最著名的四位诗人")
+    # print("中国唐朝最著名的四位诗人")
+    get_all_index_names()

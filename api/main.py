@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from src.indexing import build_basic_fixed_size_index, build_automerging_index, build_sentence_window_index
-from src.retrieval import basic_query_from_documents, chat_with_llm_pure
+from src.retrieval import basic_query_from_documents
 from src.utils import get_chat_file_name, get_all_files_from_directory, print_data_sources, get_timestamp
 from typing import Union, List, Optional
 # 将项目根目录添加到 sys.path
@@ -23,6 +23,33 @@ app.add_middleware(
     allow_methods=["*"],  # 允许所有方法
     allow_headers=["*"],  # 允许所有头
 )
+
+
+# api_key = get_api_key_grok()
+# base_url= "https://api.x.ai/v1"
+# model_name = "grok-2-1212"
+
+# Settings.llm = OpenAI(
+#     api_base="https://api.302.ai/v1",
+#     api_key=api_key,
+#     model_name="deepseek-v3-huoshan"
+# )
+
+# os.environ["http_proxy"] = "http://127.0.0.1:7890"
+# os.environ["https_proxy"] = "http://127.0.0.1:7890"
+# api_key_google = get_api_key_google()
+# genai.configure(api_key=api_key_google, transport="rest")
+# gemini_model = genai.GenerativeModel(
+#     model_name = "gemini-2.0-flash-thinking-exp-01-21",
+# )
+# def chat_with_gemini(question, context):
+#     system_template = f"You are a helpful AI assistant. Use the following pieces of context to answer the question at the end. If you don't know the answer, just say you don't know. DO NOT try to make up an answer. If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context. Question: {question} context: {context}  Helpful answer:"
+#     response = gemini_model.generate_content(
+#                 contents=system_template, 
+#                 stream=True)
+#     for chunk in response:
+#         print(chunk.text, end="", flush=True)
+#     print(response.text)
 
 
 api_key = get_api_key()
@@ -95,8 +122,7 @@ async def query_from_documents_api(request: QueryRequest):
             source_nodes = basic_query_from_documents(
                 question=request.question,
                 index_names=request.index_names,
-                similarity_top_k=request.similarity_top_k,
-                chat_record_file=chat_record_file
+                similarity_top_k=request.similarity_top_k
             )
 
             context = "\n".join([n.text for n in source_nodes])
