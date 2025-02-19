@@ -10,13 +10,18 @@
         <h1>LLM 个人知识工作台</h1>
         
         <div class="layout">
-            <div class="input-section">
+            <!-- 第一列：索引列表 -->
+            <div class="index-section">
                 <div class="section">
                     <h2>索引列表</h2>
                     <div id="indexList">
                         <div class="loading">加载中...</div>
                     </div>
                 </div>
+            </div>
+    
+            <!-- 第二列：输入部分 -->
+            <div class="input-section">
                 <div class="section">
                     <h2>查询文档</h2>
                     <form id="queryForm">
@@ -27,7 +32,7 @@
                     </form>
                     <div id="queryResult"></div>
                 </div>
-
+    
                 <div class="section">
                     <h2>与 LLM 聊天</h2>
                     <form id="chatForm">
@@ -37,7 +42,8 @@
                     <div id="chatResult"></div>
                 </div>
             </div>
-
+    
+            <!-- 第三列：输出部分 -->
             <div class="output-section">
                 <div class="section">
                     <h2>输出结果 <button id="copyButton" style="float: right;">复制结果</button></h2>

@@ -12,21 +12,35 @@ body {
 .layout {
     display: flex;
     gap: 20px;
+    align-items: stretch; /* 使所有列等高 */
+}
+
+.index-section,
+.input-section,
+.output-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.index-section {
+    width: 15%;
 }
 
 .input-section {
-    width: 40%;
+    width: 35%;
 }
 
 .output-section {
-    width: 60%;
+    width: 50%;
 }
 
+/* 修改 section 的高度 */
 .section {
     margin-bottom: 30px;
     padding: 20px;
     border: 1px solid #ddd;
     border-radius: 5px;
+    flex-grow: 1; /* 使 section 填满父容器高度 */
 }
 
 .markdown-output {
@@ -61,7 +75,7 @@ body {
 
 /* 修改输入框样式 */
 #indexNames {
-    width: 252px;  /* 设置固定宽度 */
+    width: 100px;  /* 设置固定宽度 */
     height: 30px;  /* 与按钮高度保持一致 */
     padding: 10px;
     box-sizing: border-box;
