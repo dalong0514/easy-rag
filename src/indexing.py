@@ -157,7 +157,7 @@ def build_sentence_window_index(input_files, index_name):
             client.close()  # Ensure client is always closed
             print("Weaviate connection closed.")
 
-def delete_document_collection(index_names):
+def delete_document_collections(index_names):
     """批量删除 Weaviate 中的集合
     Args:
         index_names: 要删除的索引名称列表
@@ -186,4 +186,4 @@ def delete_document_collection(index_names):
         print("Weaviate connection closed.")
 
 if __name__ == "__main__":
-    delete_document_collection("xx")
+    delete_document_collections("xx")

@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from src.indexing import build_basic_fixed_size_index, build_automerging_index, build_sentence_window_index
+from src.indexing import build_basic_fixed_size_index, build_automerging_index, build_sentence_window_index, delete_document_collections
 from src.retrieval import basic_query_from_documents, get_all_index_names
 from src.utils import get_chat_file_name, get_all_files_from_directory, print_data_sources, get_timestamp
 from typing import Union, List, Optional
@@ -59,6 +59,9 @@ class BuildIndexRequest(BaseModel):
 class GetIndexNamesRequest(BaseModel):
     pass
 
+
+class DeleteIndexRequest(BaseModel):
+    index_names: List[str]
 
 @app.post("/query")
 async def query_from_documents_api(request: QueryRequest):
@@ -188,6 +191,21 @@ async def get_index_names_api(request: GetIndexNamesRequest):
             "status": "success",
             "index_names": index_names
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/delete-index")
+async def delete_index_api(request: DeleteIndexRequest):
+    try:
+        # 调用删除函数
+        delete_document_collections(request.index_names)
+        
+        return {
+            "status": "success",
+            "message": f"Indexes {request.index_names} deleted successfully"
+        }
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

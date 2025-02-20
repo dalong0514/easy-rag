@@ -1,6 +1,6 @@
 import os, time
 from src.retrieval import basic_query_from_documents
-from src.indexing import build_basic_fixed_size_index, get_all_files_from_directory, delete_document_collection
+from src.indexing import build_basic_fixed_size_index, get_all_files_from_directory, delete_document_collections
 from trulens_eval import Tru
 from eval.utils_eval import get_prebuilt_trulens_recorder
 
