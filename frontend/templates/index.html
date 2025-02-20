@@ -18,6 +18,7 @@
                     <div id="indexList">
                         <div class="loading">加载中...</div>
                     </div>
+                    <button id="manageIndexBtn" class="btn">管理索引列表</button>
                 </div>
             </div>
     
@@ -49,6 +50,59 @@
                     <h2>输出结果 <button id="copyButton" style="float: right;">复制结果</button></h2>
                     <div id="streamOutput" class="markdown-output"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加索引管理面板 -->
+    <div id="indexManagementPanel" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>索引管理</h2>
+            
+            <!-- 删除索引部分 -->
+            <div class="delete-section">
+                <h3>删除索引</h3>
+                <div id="deleteIndexList"></div>
+                <button id="deleteIndexBtn" class="btn btn-danger">删除所选索引</button>
+            </div>
+
+            <!-- 添加索引部分 -->
+            <div class="add-section">
+                <h3>添加索引</h3>
+                <div class="form-group">
+                    <label>索引名称:</label>
+                    <input type="text" id="indexName" placeholder="输入索引名称">
+                </div>
+                <div class="form-group">
+                    <label>索引类型:</label>
+                    <select id="indexType">
+                        <option value="basic">Basic</option>
+                        <option value="automerging">Auto Merging</option>
+                        <option value="sentence_window">Sentence Window</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Chunk Size:</label>
+                    <input type="number" id="chunkSize" value="1024">
+                </div>
+                <div class="form-group">
+                    <label>Chunk Overlap:</label>
+                    <input type="number" id="chunkOverlap" value="200">
+                </div>
+                <div class="form-group">
+                    <label>文件夹路径:</label>
+                    <input type="text" id="folderPath" placeholder="输入文件夹绝对路径">
+                </div>
+                <div class="form-group">
+                    <label>文件扩展名:</label>
+                    <input type="text" id="fileExtension" placeholder="例如：md, txt">
+                </div>
+                <div class="form-group">
+                    <button id="selectFilesBtn" class="btn">选择文件/文件夹</button>
+                    <span id="selectedFilesInfo"></span>
+                </div>
+                <button id="addIndexBtn" class="btn btn-primary">添加索引</button>
             </div>
         </div>
     </div>
@@ -91,6 +145,170 @@
         });
     
         document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('indexManagementPanel');
+            const closeBtn = document.querySelector('.close');
+            const manageBtn = document.getElementById('manageIndexBtn');
+            const deleteIndexBtn = document.getElementById('deleteIndexBtn');
+            const addIndexBtn = document.getElementById('addIndexBtn');
+            const selectFilesBtn = document.getElementById('selectFilesBtn');
+            let selectedFiles = [];
+
+            // 打开管理面板
+            manageBtn.addEventListener('click', async function() {
+                modal.style.display = 'block';
+                await loadDeleteIndexList();
+            });
+
+            // 关闭管理面板
+            closeBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+
+            // 加载删除索引列表
+            async function loadDeleteIndexList() {
+                try {
+                    const response = await fetch('http://localhost:8001/get-index-names', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({})
+                    });
+                    
+                    const data = await response.json();
+                    const deleteIndexList = document.getElementById('deleteIndexList');
+                    
+                    if (data.status === 'success' && data.index_names.length > 0) {
+                        deleteIndexList.innerHTML = data.index_names.map(name => 
+                            `<div class="index-item">${name}</div>`
+                        ).join('');
+                        
+                        // 添加点击事件
+                        document.querySelectorAll('#deleteIndexList .index-item').forEach(item => {
+                            item.addEventListener('click', function() {
+                                this.classList.toggle('selected-index');
+                            });
+                        });
+                    } else {
+                        deleteIndexList.innerHTML = '<div class="no-data">没有可用的索引</div>';
+                    }
+                } catch (error) {
+                    console.error('Error loading index names:', error);
+                    deleteIndexList.innerHTML = '<div class="error">加载索引列表失败</div>';
+                }
+            }
+
+            // 删除索引
+            deleteIndexBtn.addEventListener('click', async function() {
+                const selectedIndexes = Array.from(document.querySelectorAll('#deleteIndexList .selected-index'))
+                    .map(item => item.textContent);
+                
+                if (selectedIndexes.length === 0) {
+                    alert('请至少选择一个索引！');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('http://localhost:8001/delete-index', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            index_names: selectedIndexes
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        alert('删除成功！');
+                        await loadDeleteIndexList();
+                    } else {
+                        alert('删除失败！');
+                    }
+                } catch (error) {
+                    console.error('Error deleting indexes:', error);
+                    alert('删除过程中发生错误！');
+                }
+            });
+
+            // 选择文件/文件夹
+            selectFilesBtn.addEventListener('click', function() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.webkitdirectory = true;
+                input.multiple = true;
+                
+                input.addEventListener('change', function() {
+                    console.log('File input changed');
+                    if (this.files && this.files.length > 0) {
+                        const folderPath = document.getElementById('folderPath').value;
+                        selectedFiles = Array.from(this.files)
+                            .filter(file => !file.name.startsWith('.')) // 过滤掉隐藏文件
+                            .map(file => {
+                                // 获取相对路径
+                                const relativePath = file.webkitRelativePath;
+                                // 拼接完整路径
+                                const fullPath = folderPath ? 
+                                    `${folderPath.replace(/\/$/, '')}/${relativePath}` : 
+                                    relativePath;
+                                return fullPath.replace(/\\/g, '/'); // 确保路径使用正斜杠
+                            });
+                        console.log('Selected files:', selectedFiles);
+                        document.getElementById('selectedFilesInfo').textContent = `已选择 ${selectedFiles.length} 个文件`;
+                    } else {
+                        console.log('No files selected');
+                        document.getElementById('selectedFilesInfo').textContent = '未选择任何文件';
+                    }
+                });
+                
+                input.click();
+            });
+
+            // 添加索引
+            addIndexBtn.addEventListener('click', async function() {
+                const requestBody = {
+                    input_path: selectedFiles.length === 1 ? selectedFiles[0] : selectedFiles,
+                    index_name: document.getElementById('indexName').value,
+                    index_type: document.getElementById('indexType').value,
+                    chunk_size: parseInt(document.getElementById('chunkSize').value),
+                    chunk_overlap: parseInt(document.getElementById('chunkOverlap').value),
+                    file_extension: document.getElementById('fileExtension').value || null
+                };
+
+                // 添加调试信息
+                console.log('Request Body:', JSON.stringify(requestBody, null, 2));
+
+                try {
+                    const response = await fetch('http://localhost:8001/build-index', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error('Error details:', errorData);
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        alert('索引添加成功！');
+                        modal.style.display = 'none';
+                        selectedFiles = [];
+                        document.getElementById('selectedFilesInfo').textContent = '';
+                    } else {
+                        alert('索引添加失败！');
+                    }
+                } catch (error) {
+                    console.error('Error adding index:', error);
+                    alert(`添加索引过程中发生错误：${error.message}`);
+                }
+            });
+
             // Function to load index names
             async function loadIndexNames() {
                 try {
@@ -184,7 +402,7 @@
                     document.getElementById('indexList').innerHTML = '<div class="error">加载索引列表失败</div>';
                 }
             }
-    
+            
             // Load index names when page loads
             loadIndexNames();
 

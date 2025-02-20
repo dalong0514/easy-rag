@@ -160,3 +160,82 @@ button:hover {
 .index-item.selected:hover {
     background-color: #0056b3;
 }
+
+/* 添加索引管理面板中的输入框样式 */
+#indexManagementPanel input[type="text"],
+#indexManagementPanel input[type="number"],
+#indexManagementPanel select {
+    font-size: 14px;
+    padding: 6px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* 调整按钮字体大小 */
+#indexManagementPanel .btn {
+    font-size: 14px;
+}
+
+/* 调整标签字体大小 */
+#indexManagementPanel .form-group label {
+    font-size: 14px;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 50%;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: black;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.btn {
+    margin: 5px;
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.selected-index {
+    background-color: #007bff;
+    color: white;
+}
