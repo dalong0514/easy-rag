@@ -24,12 +24,12 @@ from llama_index.core import StorageContext
 from weaviate.classes.config import Configure
 from weaviate.classes.query import MetadataQuery
 from typing import List, Optional
-from helper import get_api_key, get_api_key_weaviate, get_wcd_url_weaviate
+from helper import get_api_key, get_base_url
 
 
 api_key = get_api_key()
-wcd_api_key = get_api_key_weaviate()
-wcd_url = get_api_key_weaviate()
+wcd_api_key = get_api_key("weaviate")
+wcd_url = get_base_url("weaviate")
 
 base_url= "https://api.302.ai/v1"
 model_name = "deepseek-v3-aliyun"

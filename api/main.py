@@ -11,7 +11,7 @@ from typing import Union, List, Optional
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from helper import get_api_key
+from helper import get_api_key, get_base_url
 
 app = FastAPI()
 
@@ -25,7 +25,7 @@ app.add_middleware(
 )
 
 api_key = get_api_key()
-base_url= "https://api.302.ai/v1"
+base_url= get_base_url()
 model_name = "deepseek-r1-huoshan"
 
 model = ChatOpenAI(
@@ -84,7 +84,6 @@ async def query_from_documents_api(request: QueryRequest):
             # 流式返回 LLM 的响应
             full_response = ""
             prompt_template = ChatPromptTemplate([
-                ("system", "You are a helpful AI assistant..."),
                 ("user", "Use the following pieces of context to answer the question at the end.\n{context}\nQuestion: {question} ")
             ])
             prompt = prompt_template.invoke({"context": context, "question": request.question})
