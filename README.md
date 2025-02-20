@@ -23,6 +23,10 @@ Key Features:
 - **Efficient Retrieval**: Implements hierarchical node parsing and sentence window retrieval for optimized performance.
 - **Easy Deployment**: Provides a simple API interface for integration with existing systems.
 
+<div align="center">
+    <img src="assets/overview.png" width="95%" height="auto" />
+</div>
+
 ## Requirements
 
 - Python 3.8+
