@@ -81,6 +81,7 @@ curl -X POST "http://127.0.0.1:8001/build-index" \
 
 ## Project Structure
 
+```
 easy-rag/
 ├── api/                     # FastAPI application
 │   └── main.py              # API endpoints
@@ -103,7 +104,7 @@ easy-rag/
 ├── LICENSE                  # MIT License file
 ├── .gitignore               # Git ignore file
 └── docker-compose.yml       # Docker compose file for Weaviate
-
+```
 
 ## Citation
 
