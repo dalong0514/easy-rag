@@ -175,3 +175,6 @@ db/
 
 # RAG source data
 data/
+
+# chatrecord data
+chatrecord/

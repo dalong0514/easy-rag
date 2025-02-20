@@ -26,7 +26,7 @@
                     <h2>RAG 查询文档</h2>
                     <form id="queryForm">
                         <textarea id="question" placeholder="输入你的问题..."></textarea>
-                        <button type="submit" id="queryButton">查询</button>
+                        <button type="submit" id="queryButton">发送</button>
                         <input type="number" id="similarityTopK" placeholder="输入similarity_top_k（默认10）" value="10">
                     </form>
                     <div id="queryResult"></div>
@@ -60,7 +60,7 @@
                 button.textContent = '请求中...';
                 button.disabled = true;
             } else {
-                button.textContent = '查询';
+                button.textContent = '发送';
                 button.disabled = false;
             }
         }
@@ -117,7 +117,7 @@
                             });
                         });
     
-                        // 绑定查询表单提交事件
+                        // 绑定发送表单提交事件
                         document.getElementById('queryForm').addEventListener('submit', async function(e) {
                             e.preventDefault();
                             
@@ -186,6 +186,53 @@
     
             // Load index names when page loads
             loadIndexNames();
+
+            // Chat with LLM 按钮事件
+            document.getElementById('chatForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const button = document.getElementById('chatButton');
+                toggleButtonState(button, true);
+                
+                const question = document.getElementById('chatQuestion').value;
+
+                // 清空之前的输出
+                document.getElementById('streamOutput').textContent = '';
+                
+                try {
+                    const response = await fetch('http://localhost:8001/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            question: question
+                        })
+                    });
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let result = '';
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        const chunk = decoder.decode(value, { stream: true });
+                        result += chunk;
+                        
+                        updateStreamOutput(result);
+                        
+                        const outputElement = document.getElementById('streamOutput');
+                        outputElement.scrollTop = outputElement.scrollHeight;
+                    }
+                    
+                } catch (error) {
+                    document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
+                } finally {
+                    toggleButtonState(button, false);
+                }
+            });
         });
     </script>
 </body>
