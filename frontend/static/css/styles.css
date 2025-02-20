@@ -5,7 +5,7 @@ body {
 }
 
 .container {
-    max-width: 1500px;
+    max-width: 1600px;
     margin: 0 auto;
 }
 
@@ -24,6 +24,16 @@ body {
 
 .index-section {
     width: 15%;
+}
+
+.filter-input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
 }
 
 .input-section {
