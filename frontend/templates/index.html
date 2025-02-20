@@ -346,7 +346,6 @@
                     const result = await response.json();
                     if (result.status === 'success') {
                         alert('索引添加成功！');
-                        modal.style.display = 'none';
                         selectedFiles = [];
                         document.getElementById('selectedFilesInfo').textContent = '';
                         
@@ -367,6 +366,7 @@
             });
 
             // Function to load index names
+            // 修改 loadIndexNames 函数，将表单事件绑定移到函数外部
             async function loadIndexNames() {
                 try {
                     const response = await fetch('http://localhost:8001/get-index-names', {
@@ -392,65 +392,6 @@
                                 this.classList.toggle('selected');
                             });
                         });
-    
-                        // 绑定发送表单提交事件
-                        document.getElementById('queryForm').addEventListener('submit', async function(e) {
-                            e.preventDefault();
-                            
-                            const button = document.getElementById('queryButton');
-                            toggleButtonState(button, true);
-                            
-                            const question = document.getElementById('question').value;
-                            const similarityTopK = parseInt(document.getElementById('similarityTopK').value) || 12;
-                            const selectedIndexes = Array.from(document.querySelectorAll('.index-item.selected'))
-                                .map(item => item.textContent);
-
-                            // 添加检查：如果 selectedIndexes 为空
-                            if (selectedIndexes.length === 0) {
-                                alert('请至少选择一个索引！');
-                                toggleButtonState(button, false);
-                                return;
-                            }
-
-                            // 清空之前的输出
-                            document.getElementById('streamOutput').textContent = '';
-                            
-                            try {
-                                const response = await fetch('http://localhost:8001/query', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        question: question,
-                                        index_names: selectedIndexes,
-                                        similarity_top_k: similarityTopK
-                                    })
-                                });
-    
-                                const reader = response.body.getReader();
-                                const decoder = new TextDecoder();
-                                let result = '';
-    
-                                while (true) {
-                                    const { done, value } = await reader.read();
-                                    if (done) break;
-                                    
-                                    const chunk = decoder.decode(value, { stream: true });
-                                    result += chunk;
-                                    
-                                    updateStreamOutput(result);
-                                    
-                                    const outputElement = document.getElementById('streamOutput');
-                                    outputElement.scrollTop = outputElement.scrollHeight;
-                                }
-                                
-                            } catch (error) {
-                                document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
-                            } finally {
-                                toggleButtonState(button, false);
-                            }
-                        });
                     } else {
                         indexList.innerHTML = '<div class="no-data">没有可用的索引</div>';
                     }
@@ -459,6 +400,65 @@
                     document.getElementById('indexList').innerHTML = '<div class="error">加载索引列表失败</div>';
                 }
             }
+
+            // 绑定发送表单提交事件
+            document.getElementById('queryForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const button = document.getElementById('queryButton');
+                toggleButtonState(button, true);
+                
+                const question = document.getElementById('question').value;
+                const similarityTopK = parseInt(document.getElementById('similarityTopK').value) || 12;
+                const selectedIndexes = Array.from(document.querySelectorAll('.index-item.selected'))
+                    .map(item => item.textContent);
+
+                // 添加检查：如果 selectedIndexes 为空
+                if (selectedIndexes.length === 0) {
+                    alert('请至少选择一个索引！');
+                    toggleButtonState(button, false);
+                    return;
+                }
+
+                // 清空之前的输出
+                document.getElementById('streamOutput').textContent = '';
+                
+                try {
+                    const response = await fetch('http://localhost:8001/query', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            question: question,
+                            index_names: selectedIndexes,
+                            similarity_top_k: similarityTopK
+                        })
+                    });
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let result = '';
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        const chunk = decoder.decode(value, { stream: true });
+                        result += chunk;
+                        
+                        updateStreamOutput(result);
+                        
+                        const outputElement = document.getElementById('streamOutput');
+                        outputElement.scrollTop = outputElement.scrollHeight;
+                    }
+                    
+                } catch (error) {
+                    document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
+                } finally {
+                    toggleButtonState(button, false);
+                }
+            });
 
             // Load index names when page loads
             loadIndexNames();
