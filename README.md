@@ -29,8 +29,7 @@ Key Features:
 
 ## Requirements
 
-- Python 3.8+
-- GPU with at least 16GB VRAM (recommended)
+- Python 3.10+
 - Weaviate (for vector storage)
 
 ## Installation
@@ -82,17 +81,28 @@ curl -X POST "http://127.0.0.1:8001/build-index" \
 
 ## Project Structure
 
-agent-rag/
-├── api/ # FastAPI application
-│ └── main.py # API endpoints
-├── src/ # Core functionality
-│ ├── indexing.py # Index building functions
-│ ├── retrieval.py # Document retrieval functions
-│ └── utils.py # Utility functions
-├── eval/ # Evaluation scripts
-│ └── utils_eval.py # Evaluation utilities
-├── requirements.txt # Python dependencies
-└── README.md # Project documentation
+easy-rag/
+├── api/                     # FastAPI application
+│   └── main.py              # API endpoints
+├── src/                     # Core functionality
+│   ├── indexing.py          # Index building functions
+│   ├── retrieval.py         # Document retrieval functions
+│   └── utils.py             # Utility functions
+├── eval/                    # Evaluation scripts
+│   └── utils_eval.py        # Evaluation utilities
+├── frontend/                # Frontend files
+│   ├── static/              # Static assets
+│   │   └── css/             # CSS files
+│   │       └── styles.css   # CSS styles
+│   └── templates/           # HTML templates
+│       └── index.html       # Main HTML template
+├── assets/                  # Static assets
+│   └── overview.png         # Project overview image
+├── requirements.txt         # Python dependencies
+├── README.md                # Project documentation
+├── LICENSE                  # MIT License file
+├── .gitignore               # Git ignore file
+└── docker-compose.yml       # Docker compose file for Weaviate
 
 
 ## Citation
