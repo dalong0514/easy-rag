@@ -161,6 +161,32 @@ button:hover {
     background-color: #0056b3;
 }
 
+
+
+
+.management-layout {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.delete-section {
+    width: 45%;
+    padding: 15px;
+    border-right: 1px solid #ddd;
+}
+
+.add-section {
+    width: 55%;
+    padding: 15px;
+}
+
+#deleteIndexList {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 10px;
+}
+
 /* 添加索引管理面板中的输入框样式 */
 #indexManagementPanel input[type="text"],
 #indexManagementPanel input[type="number"],
@@ -254,4 +280,10 @@ button:hover {
     height: 30px;
     padding: 0 15px;
     font-size: 14px;
+}
+
+.form-group.buttons-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }

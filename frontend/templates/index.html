@@ -60,49 +60,51 @@
             <span class="close">&times;</span>
             <h2>索引管理</h2>
             
-            <!-- 删除索引部分 -->
-            <div class="delete-section">
-                <div class="header">
-                    <button id="deleteIndexBtn" class="btn btn-danger">删除所选索引</button>
+            <div class="management-layout">
+                <!-- 左侧：删除索引部分 -->
+                <div class="delete-section">
+                    <div class="header">
+                        <button id="deleteIndexBtn" class="btn btn-danger">删除所选索引</button>
+                    </div>
+                    <div id="deleteIndexList"></div>
                 </div>
-                <div id="deleteIndexList"></div>
-            </div>
-
-            <!-- 添加索引部分 -->
-            <div class="add-section">
-                <div class="form-group">
-                    <label>索引名称:</label>
-                    <input type="text" id="indexName" placeholder="输入索引名称">
+    
+                <!-- 右侧：添加索引部分 -->
+                <div class="add-section">
+                    <div class="form-group">
+                        <label>索引名称:</label>
+                        <input type="text" id="indexName" placeholder="输入索引名称">
+                    </div>
+                    <div class="form-group">
+                        <label>索引类型:</label>
+                        <select id="indexType">
+                            <option value="basic">Basic</option>
+                            <option value="automerging">Auto Merging</option>
+                            <option value="sentence_window">Sentence Window</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Chunk Size:</label>
+                        <input type="number" id="chunkSize" value="1024">
+                    </div>
+                    <div class="form-group">
+                        <label>Chunk Overlap:</label>
+                        <input type="number" id="chunkOverlap" value="200">
+                    </div>
+                    <div class="form-group">
+                        <label>文件夹路径:</label>
+                        <input type="text" id="folderPath" placeholder="输入文件夹绝对路径">
+                    </div>
+                    <div class="form-group">
+                        <label>文件扩展名:</label>
+                        <input type="text" id="fileExtension" placeholder="例如：md, txt">
+                    </div>
+                    <div class="form-group buttons-container">
+                        <button id="selectFilesBtn" class="btn">选择文件/文件夹</button>
+                        <span id="selectedFilesInfo"></span>
+                        <button id="addIndexBtn" class="btn btn-primary">添加索引</button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>索引类型:</label>
-                    <select id="indexType">
-                        <option value="basic">Basic</option>
-                        <option value="automerging">Auto Merging</option>
-                        <option value="sentence_window">Sentence Window</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Chunk Size:</label>
-                    <input type="number" id="chunkSize" value="1024">
-                </div>
-                <div class="form-group">
-                    <label>Chunk Overlap:</label>
-                    <input type="number" id="chunkOverlap" value="200">
-                </div>
-                <div class="form-group">
-                    <label>文件夹路径:</label>
-                    <input type="text" id="folderPath" placeholder="输入文件夹绝对路径">
-                </div>
-                <div class="form-group">
-                    <label>文件扩展名:</label>
-                    <input type="text" id="fileExtension" placeholder="例如：md, txt">
-                </div>
-                <div class="form-group">
-                    <button id="selectFilesBtn" class="btn">选择文件/文件夹</button>
-                    <span id="selectedFilesInfo"></span>
-                </div>
-                <button id="addIndexBtn" class="btn btn-primary">添加索引</button>
             </div>
         </div>
     </div>
