@@ -11,7 +11,7 @@ from typing import Union, List, Optional
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from helper import get_api_key, get_base_url
+from helper import get_api_key, get_base_url, get_chat_record_dir
 
 app = FastAPI()
 
@@ -27,6 +27,7 @@ app.add_middleware(
 api_key = get_api_key()
 base_url= get_base_url()
 model_name = "deepseek-r1-huoshan"
+chat_record_dir= get_chat_record_dir()
 
 model = ChatOpenAI(
     base_url=base_url,
@@ -40,11 +41,11 @@ class QueryRequest(BaseModel):
     question: str
     index_names: List[str]
     similarity_top_k: int = 12
-    chat_record_dir: str = "/Users/Daglas/dalong.github/dalong.chatrecord/chatrecord-origin/"
+    chat_record_dir: str = chat_record_dir
 
 class ChatRequest(BaseModel):
     question: str
-    chat_record_dir: str = "/Users/Daglas/dalong.github/dalong.chatrecord/chatrecord-origin/"
+    chat_record_dir: str = chat_record_dir
 
 class BuildIndexRequest(BaseModel):
     input_path: Union[List[str], str]  # 支持文件路径列表或目录路径

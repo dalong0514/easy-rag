@@ -45,3 +45,10 @@ def get_base_url(service="default"):
         "weaviate": "WCD_URL"
     }
     return os.getenv(key_mapping.get(service, "BASE_URL"))
+
+def get_chat_record_dir():
+    load_env()
+    # Get the path from environment variable, return default path if empty or not set
+    default_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "easy-rag/chatrecord/")
+    chat_record_dir = os.getenv("CHAT_RECORD_DIR")
+    return default_path if not chat_record_dir else chat_record_dir
