@@ -203,11 +203,21 @@
 
             // 删除索引
             deleteIndexBtn.addEventListener('click', async function() {
+                // 保存原始按钮文本
+                const originalText = this.textContent;
+                
+                // 切换按钮状态为加载中
+                this.textContent = '删除中...';
+                this.disabled = true;
+
                 const selectedIndexes = Array.from(document.querySelectorAll('#deleteIndexList .selected-index'))
                     .map(item => item.textContent);
                 
                 if (selectedIndexes.length === 0) {
                     alert('请至少选择一个索引！');
+                    // 恢复按钮状态
+                    this.textContent = originalText;
+                    this.disabled = false;
                     return;
                 }
 
@@ -233,6 +243,10 @@
                 } catch (error) {
                     console.error('Error deleting indexes:', error);
                     alert('删除过程中发生错误！');
+                } finally {
+                    // 无论成功或失败，都恢复按钮状态
+                    this.textContent = originalText;
+                    this.disabled = false;
                 }
             });
 
@@ -298,6 +312,13 @@
 
             // 添加索引
             addIndexBtn.addEventListener('click', async function() {
+                // 保存原始按钮文本
+                const originalText = this.textContent;
+                
+                // 切换按钮状态为加载中
+                this.textContent = '添加中...';
+                this.disabled = true;
+
                 const requestBody = {
                     input_path: selectedFiles.length === 1 ? selectedFiles[0] : selectedFiles,
                     index_name: document.getElementById('indexName').value,
@@ -338,6 +359,10 @@
                 } catch (error) {
                     console.error('Error adding index:', error);
                     alert(`添加索引过程中发生错误：${error.message}`);
+                } finally {
+                    // 无论成功或失败，都恢复按钮状态
+                    this.textContent = originalText;
+                    this.disabled = false;
                 }
             });
 
