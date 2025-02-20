@@ -157,17 +157,33 @@ def build_sentence_window_index(input_files, index_name):
             client.close()  # Ensure client is always closed
             print("Weaviate connection closed.")
 
-def delete_document_collection(index_name):
-    """删除 Weaviate 中的集合"""
+def delete_document_collection(index_names):
+    """批量删除 Weaviate 中的集合
+    Args:
+        index_names: 要删除的索引名称列表
+    """
     # 连接本地 Weaviate
     client = weaviate.connect_to_local()
     
-    # 删除集合
-    client.collections.delete(index_name)
-
-    print("documents collection has been deleted.")
-    
-    client.close()  # Free up resources
+    try:
+        # 如果传入的是单个字符串，转换为列表
+        if isinstance(index_names, str):
+            index_names = [index_names]
+            
+        # 遍历并删除每个集合
+        for index_name in index_names:
+            if client.collections.exists(index_name):
+                client.collections.delete(index_name)
+                print(f"Collection '{index_name}' has been deleted.")
+            else:
+                print(f"Collection '{index_name}' does not exist.")
+                
+    except Exception as e:
+        print(f"Error occurred while deleting collections: {str(e)}")
+        raise
+    finally:
+        client.close()  # 释放资源
+        print("Weaviate connection closed.")
 
 if __name__ == "__main__":
     delete_document_collection("xx")
