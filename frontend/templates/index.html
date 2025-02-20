@@ -100,7 +100,8 @@
                         <input type="text" id="fileExtension" placeholder="例如：md, txt">
                     </div>
                     <div class="form-group buttons-container">
-                        <button id="selectFilesBtn" class="btn">选择文件/文件夹</button>
+                        <button id="selectFilesBtn" class="btn">选择文件夹</button>
+                        <button id="selectIndividualFilesBtn" class="btn">选择文件</button>
                         <span id="selectedFilesInfo"></span>
                         <button id="addIndexBtn" class="btn btn-primary">添加索引</button>
                     </div>
@@ -224,7 +225,8 @@
                     const result = await response.json();
                     if (result.status === 'success') {
                         alert('删除成功！');
-                        await loadDeleteIndexList();
+                        await loadIndexNames(); // 重新加载主界面索引列表
+                        await loadDeleteIndexList(); // 重新加载管理面板的索引列表
                     } else {
                         alert('删除失败！');
                     }
@@ -234,7 +236,7 @@
                 }
             });
 
-            // 选择文件/文件夹
+            // 选择文件夹
             selectFilesBtn.addEventListener('click', function() {
                 const input = document.createElement('input');
                 input.type = 'file';
@@ -248,12 +250,39 @@
                         selectedFiles = Array.from(this.files)
                             .filter(file => !file.name.startsWith('.')) // 过滤掉隐藏文件
                             .map(file => {
-                                // 获取相对路径
-                                const relativePath = file.webkitRelativePath;
-                                // 拼接完整路径
+                                // 直接使用文件名，拼接完整路径
                                 const fullPath = folderPath ? 
-                                    `${folderPath.replace(/\/$/, '')}/${relativePath}` : 
-                                    relativePath;
+                                    `${folderPath.replace(/\/$/, '')}/${file.name}` : 
+                                    file.name;
+                                return fullPath.replace(/\\/g, '/'); // 确保路径使用正斜杠
+                            });
+                        console.log('Selected files:', selectedFiles);
+                        document.getElementById('selectedFilesInfo').textContent = `已选择 ${selectedFiles.length} 个文件`;
+                    } else {
+                        console.log('No files selected');
+                        document.getElementById('selectedFilesInfo').textContent = '未选择任何文件';
+                    }
+                });
+                
+                input.click();
+            });
+
+            // 添加选择文件按钮事件
+            document.getElementById('selectIndividualFilesBtn').addEventListener('click', function() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.multiple = true;
+                
+                input.addEventListener('change', function() {
+                    if (this.files && this.files.length > 0) {
+                        const folderPath = document.getElementById('folderPath').value;
+                        selectedFiles = Array.from(this.files)
+                            .filter(file => !file.name.startsWith('.')) // 过滤掉隐藏文件
+                            .map(file => {
+                                // 直接使用文件名，拼接完整路径
+                                const fullPath = folderPath ? 
+                                    `${folderPath.replace(/\/$/, '')}/${file.name}` : 
+                                    file.name;
                                 return fullPath.replace(/\\/g, '/'); // 确保路径使用正斜杠
                             });
                         console.log('Selected files:', selectedFiles);
@@ -278,9 +307,6 @@
                     file_extension: document.getElementById('fileExtension').value || null
                 };
 
-                // 添加调试信息
-                console.log('Request Body:', JSON.stringify(requestBody, null, 2));
-
                 try {
                     const response = await fetch('http://localhost:8001/build-index', {
                         method: 'POST',
@@ -302,6 +328,10 @@
                         modal.style.display = 'none';
                         selectedFiles = [];
                         document.getElementById('selectedFilesInfo').textContent = '';
+                        
+                        // 添加重新加载索引列表的逻辑
+                        await loadIndexNames(); // 重新加载主界面索引列表
+                        await loadDeleteIndexList(); // 重新加载管理面板的索引列表
                     } else {
                         alert('索引添加失败！');
                     }
