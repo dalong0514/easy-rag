@@ -62,14 +62,14 @@
             
             <!-- 删除索引部分 -->
             <div class="delete-section">
-                <h3>删除索引</h3>
+                <div class="header">
+                    <button id="deleteIndexBtn" class="btn btn-danger">删除所选索引</button>
+                </div>
                 <div id="deleteIndexList"></div>
-                <button id="deleteIndexBtn" class="btn btn-danger">删除所选索引</button>
             </div>
 
             <!-- 添加索引部分 -->
             <div class="add-section">
-                <h3>添加索引</h3>
                 <div class="form-group">
                     <label>索引名称:</label>
                     <input type="text" id="indexName" placeholder="输入索引名称">
@@ -402,7 +402,7 @@
                     document.getElementById('indexList').innerHTML = '<div class="error">加载索引列表失败</div>';
                 }
             }
-            
+
             // Load index names when page loads
             loadIndexNames();
 

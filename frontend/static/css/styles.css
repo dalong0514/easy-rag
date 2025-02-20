@@ -239,3 +239,19 @@ button:hover {
     background-color: #007bff;
     color: white;
 }
+
+.delete-section .header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#deleteIndexBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    padding: 0 15px;
+    font-size: 14px;
+}
