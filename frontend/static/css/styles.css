@@ -282,8 +282,10 @@ button:hover {
     font-size: 14px;
 }
 
-.form-group.buttons-container {
+.buttons-container {
     display: flex;
-    align-items: center;
     gap: 10px;
+    align-items: center;
+    margin-top: 15px;
+    justify-content: flex-start; /* 可选，根据布局需要调整 */
 }

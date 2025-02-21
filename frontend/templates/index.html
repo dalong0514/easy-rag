@@ -79,8 +79,8 @@
                         <label>索引类型:</label>
                         <select id="indexType">
                             <option value="basic">Basic</option>
-                            <option value="automerging">Auto Merging</option>
                             <option value="sentence_window">Sentence Window</option>
+                            <option value="automerging">Auto Merging</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -100,7 +100,6 @@
                         <input type="text" id="fileExtension" placeholder="例如：md, txt">
                     </div>
                     <div class="form-group buttons-container">
-                        <button id="selectFilesBtn" class="btn">选择文件夹</button>
                         <button id="selectIndividualFilesBtn" class="btn">选择文件</button>
                         <span id="selectedFilesInfo"></span>
                         <button id="addIndexBtn" class="btn btn-primary">添加索引</button>
@@ -248,37 +247,6 @@
                     this.textContent = originalText;
                     this.disabled = false;
                 }
-            });
-
-            // 选择文件夹
-            selectFilesBtn.addEventListener('click', function() {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.webkitdirectory = true;
-                input.multiple = true;
-                
-                input.addEventListener('change', function() {
-                    console.log('File input changed');
-                    if (this.files && this.files.length > 0) {
-                        const folderPath = document.getElementById('folderPath').value;
-                        selectedFiles = Array.from(this.files)
-                            .filter(file => !file.name.startsWith('.')) // 过滤掉隐藏文件
-                            .map(file => {
-                                // 直接使用文件名，拼接完整路径
-                                const fullPath = folderPath ? 
-                                    `${folderPath.replace(/\/$/, '')}/${file.name}` : 
-                                    file.name;
-                                return fullPath.replace(/\\/g, '/'); // 确保路径使用正斜杠
-                            });
-                        console.log('Selected files:', selectedFiles);
-                        document.getElementById('selectedFilesInfo').textContent = `已选择 ${selectedFiles.length} 个文件`;
-                    } else {
-                        console.log('No files selected');
-                        document.getElementById('selectedFilesInfo').textContent = '未选择任何文件';
-                    }
-                });
-                
-                input.click();
             });
 
             // 添加选择文件按钮事件
