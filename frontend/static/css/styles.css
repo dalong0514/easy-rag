@@ -289,3 +289,14 @@ button:hover {
     margin-top: 15px;
     justify-content: flex-start; /* 可选，根据布局需要调整 */
 }
+
+/* 添加thinkong的样式类 */
+.thinking-content {
+    color: #2c3e50;
+    font-weight: bold;
+    margin-bottom: 10px;
+    padding: 8px;
+    background-color: #ecf0f1;
+    border-left: 4px solid #3498db;
+    /* border-left: 4px solid #2ecc71; */
+}

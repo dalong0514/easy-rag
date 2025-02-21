@@ -118,7 +118,11 @@ async def chat_with_llm_api(request: ChatRequest):
 
         async def generate():
             full_response = ""
-            response = model.stream(request.question)
+            prompt_template = ChatPromptTemplate([
+                ("user", "**response with \"\<think\>\n\" at the beginning of every output**\nQuestion: {question}")
+            ])
+            prompt = prompt_template.invoke({"question": request.question})
+            response = model.stream(prompt)
             
             for chunk in response:
                 yield chunk.content

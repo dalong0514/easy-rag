@@ -127,7 +127,30 @@
         function updateStreamOutput(content) {
             currentContent = content; // 更新当前 content
             const outputElement = document.getElementById('streamOutput');
-            outputElement.innerHTML = marked.parse(content);
+            
+            // 将内容按<think>和</think>分割
+            const parts = content.split(/(<think>|<\/think>)/g);
+            
+            let formattedContent = '';
+            let isThinking = false;
+            
+            parts.forEach(part => {
+                if (part === '<think>') {
+                    isThinking = true;
+                    formattedContent += `<div class="thinking-content">`;
+                } else if (part === '</think>') {
+                    isThinking = false;
+                    formattedContent += `</div>`;
+                } else {
+                    if (isThinking) {
+                        formattedContent += part;
+                    } else {
+                        formattedContent += `<div>${part}</div>`;
+                    }
+                }
+            });
+            
+            outputElement.innerHTML = marked.parse(formattedContent);
             outputElement.scrollTop = outputElement.scrollHeight;
         }
     
