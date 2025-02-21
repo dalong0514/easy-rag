@@ -68,20 +68,29 @@ cd easy-rag
 python -m api.main
 ```
 
-### 2. Building Indexes
+### 2. Launching Web Interface
 
-You can build different types of indexes using the API:
+To start the web interface, follow these steps:
+
+cd frontend
 
 ```
-curl -X POST "http://127.0.0.1:8001/build-index" \
--H "Content-Type: application/json" \
--d '{
-    "input_path": "/Users/Daglas/dalong.github/dalong.readnotes/20250101复制书籍/2025002The-Art-of-Doing-Science-and-Engineering",
-    "index_name": "Book2025002The_Art_of_Doing_Science_and_Engineering",
-    "index_type": "basic",
-    "file_extension": "md"
-}'
+python main.py
 ```
+
+Ensure the FastAPI server is running (see API section)
+
+Open your web browser and navigate to:
+
+```
+http://localhost:8001
+```
+
+The web interface will provide:
+   - Chat functionality
+   - Index management
+   - Real-time response streaming
+   - Interactive query interface
 
 ## Project Structure
 
@@ -123,7 +132,6 @@ publisher = {GitHub},
 journal = {GitHub repository},
 howpublished = {\url{https://github.com/dalong0514/easy-rag}}
 }
-
 
 ## Acknowledgement
 
