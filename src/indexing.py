@@ -1,4 +1,5 @@
-import os
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import weaviate
 from llama_index.core import SimpleDirectoryReader, StorageContext, ServiceContext, VectorStoreIndex, load_index_from_storage
 from llama_index.core import Settings
@@ -6,6 +7,7 @@ from llama_index.core.node_parser import SentenceSplitter, HierarchicalNodeParse
 from llama_index.core.embeddings import resolve_embed_model
 from llama_index.core.indices.postprocessor import SentenceTransformerRerank, MetadataReplacementPostProcessor
 from llama_index.vector_stores.weaviate import WeaviateVectorStore
+from src.utils import get_all_files_from_directory
 
 Settings.embed_model = resolve_embed_model("local:/Users/Daglas/dalong.modelsets/bge-m3")
 
@@ -186,4 +188,7 @@ def delete_document_collections(index_names):
         print("Weaviate connection closed.")
 
 if __name__ == "__main__":
-    delete_document_collections("xx")
+    input_files = get_all_files_from_directory(
+        "/Users/Daglas/dalong.github/dalong.readnotes/20250101复制书籍/2025021Genius_Unmasked", 
+        "md")
+    build_basic_fixed_size_index(input_files, "Book2025021Genius_Unmasked", )
