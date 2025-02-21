@@ -27,6 +27,10 @@ Key Features:
     <img src="assets/overview.png" width="95%" height="auto" />
 </div>
 
+<div align="center">
+    <img src="assets/index-management.png" width="95%" height="auto" />
+</div>
+
 ## Requirements
 
 - Python 3.10+
