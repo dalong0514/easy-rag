@@ -40,9 +40,11 @@ Key Features:
 
 1. Clone the repository:
 
+```
 git clone https://github.com/dalong0514/easy-rag.git
 
 cd easy-rag
+```
 
 2. Install dependencies:
 
@@ -62,9 +64,9 @@ docker compose up -d
 
 Start the FastAPI server:
 
+```
 cd easy-rag
 
-```
 python -m api.main
 ```
 
@@ -72,9 +74,9 @@ python -m api.main
 
 To start the web interface, follow these steps:
 
+```
 cd frontend
 
-```
 python main.py
 ```
 
