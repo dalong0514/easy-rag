@@ -124,12 +124,14 @@
     
         // 修改流式输出部分
         let currentContent = ''; // 用于存储当前 content
-        function updateStreamOutput(content) {
-            currentContent = content; // 更新当前 content
+        function updateStreamOutput(content, question) {
             const outputElement = document.getElementById('streamOutput');
             
+            // 将问题和回答内容拼接
+            const fullContent = question ? `提示词：${question}\n\n${content}` : content;
+            currentContent = fullContent; // 更新当前 content
             // 将内容按<think>和</think>分割
-            const parts = content.split(/(<think>|<\/think>)/g);
+            const parts = fullContent.split(/(<think>|<\/think>)/g);
             
             let formattedContent = '';
             let isThinking = false;
@@ -438,7 +440,7 @@
                         const chunk = decoder.decode(value, { stream: true });
                         result += chunk;
                         
-                        updateStreamOutput(result);
+                        updateStreamOutput(result, question);
                         
                         const outputElement = document.getElementById('streamOutput');
                         outputElement.scrollTop = outputElement.scrollHeight;
@@ -488,7 +490,7 @@
                         const chunk = decoder.decode(value, { stream: true });
                         result += chunk;
                         
-                        updateStreamOutput(result);
+                        updateStreamOutput(result, question);
                         
                         const outputElement = document.getElementById('streamOutput');
                         outputElement.scrollTop = outputElement.scrollHeight;
