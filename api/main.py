@@ -98,8 +98,9 @@ async def query_from_documents_api(request: QueryRequest):
                 full_response += chunk.content
             
             # 最后写入文件
+            index_names_str = ', '.join(request.index_names)
             with open(chat_record_file, 'w', encoding='utf-8') as f:
-                f.write(f"{file_name}\n\n[question]:\n\n{request.question}\n\n[answer]:\n\n{full_response}\n\n[source_datas]:\n\n{print_data}")
+                f.write(f"{file_name}\n\n[question]:\n\n{request.question}\n\n[index_names]:\n\n{index_names_str}\n\n[answer]:\n\n{full_response}\n\n[source_datas]:\n\n{print_data}")
 
         return StreamingResponse(generate(), media_type="text/plain")
         
