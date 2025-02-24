@@ -45,6 +45,7 @@ class QueryRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     question: str
+    context: Optional[str] = None  # 新增上下文字段
     chat_record_dir: str = chat_record_dir
 
 class BuildIndexRequest(BaseModel):
@@ -120,16 +121,18 @@ async def chat_with_llm_api(request: ChatRequest):
         async def generate():
             full_response = ""
             prompt_template = ChatPromptTemplate([
-                ("user", "**response with \"\<think\>\n\" at the beginning of every output**\nQuestion: {question}")
+                ("user", "**response with \"\<think\>\n\" at the beginning of every output**\nContext: {context}\nQuestion: {question}")
             ])
-            prompt = prompt_template.invoke({"question": request.question})
+            prompt = prompt_template.invoke({
+                "context": request.context or "",
+                "question": request.question
+            })
             response = model.stream(prompt)
             
             for chunk in response:
                 yield chunk.content
                 full_response += chunk.content
             
-            # 最后写入文件
             with open(chat_record_file, 'w', encoding='utf-8') as f:
                 f.write(f"{file_name}\n\n[question]:\n\n{request.question}\n\n[answer]:\n\n{full_response}")
 

@@ -9,54 +9,6 @@ function toggleButtonState(button, isLoading) {
     }
 }
 
-// 修改流式输出部分
-let currentContent = ''; // 用于存储当前 content
-function updateStreamOutput(content, question) {
-    const outputElement = document.getElementById('streamOutput');
-    
-    // 将问题和回答内容拼接
-    const fullContent = question ? `提示词：${question}\n\n${content}` : content;
-    currentContent = fullContent; // 更新当前 content
-    // 将内容按<think>和</think>分割
-    const parts = fullContent.split(/(<think>|<\/think>)/g);
-    
-    let formattedContent = '';
-    let isThinking = false;
-    
-    parts.forEach(part => {
-        if (part === '<think>') {
-            isThinking = true;
-            formattedContent += `<div class="thinking-content">`;
-        } else if (part === '</think>') {
-            isThinking = false;
-            formattedContent += `</div>`;
-        } else {
-            if (isThinking) {
-                formattedContent += part;
-            } else {
-                formattedContent += `<div>${part}</div>`;
-            }
-        }
-    });
-    
-    outputElement.innerHTML = marked.parse(formattedContent);
-    outputElement.scrollTop = outputElement.scrollHeight;
-}
-
-// 复制结果到剪贴板
-document.getElementById('copyButton').addEventListener('click', function() {
-    if (currentContent) {
-        navigator.clipboard.writeText(currentContent)
-            .then(function() {
-                alert('已复制到剪贴板');
-            })
-            .catch(function(error) {
-                alert('复制失败: ' + error);
-            });
-    } else {
-        alert('没有内容可复制');
-    }
-});
 
 // 加载删除索引列表
 async function loadDeleteIndexList() {
@@ -265,6 +217,84 @@ function initEventListeners() {
         }
     });
 
+    // 修改流式输出部分
+    let currentContent = ''; // 用于存储当前 content
+    function updateStreamOutput(content, question) {
+        const outputElement = document.getElementById('streamOutput');
+        
+        // 将问题和回答内容拼接
+        const fullContent = question ? `提示词：${question}\n\n${content}` : content;
+        currentContent = fullContent; // 更新当前 content
+        // 将内容按<think>和</think>分割
+        const parts = fullContent.split(/(<think>|<\/think>)/g);
+        
+        let formattedContent = '';
+        let isThinking = false;
+        
+        parts.forEach(part => {
+            if (part === '<think>') {
+                isThinking = true;
+                formattedContent += `<div class="thinking-content">`;
+            } else if (part === '</think>') {
+                isThinking = false;
+                formattedContent += `</div>`;
+            } else {
+                if (isThinking) {
+                    formattedContent += part;
+                } else {
+                    formattedContent += `<div>${part}</div>`;
+                }
+            }
+        });
+        
+        outputElement.innerHTML = marked.parse(formattedContent);
+        outputElement.scrollTop = outputElement.scrollHeight;
+    }
+
+    // 复制结果到剪贴板
+    document.getElementById('copyButton').addEventListener('click', function() {
+        if (currentContent) {
+            navigator.clipboard.writeText(currentContent)
+                .then(function() {
+                    alert('已复制到剪贴板');
+                })
+                .catch(function(error) {
+                    alert('复制失败: ' + error);
+                });
+        } else {
+            alert('没有内容可复制');
+        }
+    });
+
+    // 新增对话历史管理功能
+    const CHAT_HISTORY_KEY = 'chat_history';
+    const MAX_HISTORY_LENGTH = 10;
+
+    // 获取对话历史
+    function getChatHistory() {
+        const history = localStorage.getItem(CHAT_HISTORY_KEY);
+        return history ? JSON.parse(history) : [];
+    }
+
+    // 保存对话
+    function saveChatMessage(role, content) {
+        const history = getChatHistory();
+        history.push({ role, content, timestamp: new Date().toISOString() });
+        if (history.length > MAX_HISTORY_LENGTH) {
+            history.shift(); // 移除最旧的消息
+        }
+        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(history));
+    }
+
+    // 格式化历史记录为上下文
+    function formatHistoryContext() {
+        const history = getChatHistory();
+        return history.map(msg => {
+            const prefix = msg.role === 'user' ? 'User: ' : 'AI: ';
+            return prefix + msg.content;
+        }).join('\n');
+    }
+
     // 查询表单提交
     document.getElementById('queryForm').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -322,7 +352,7 @@ function initEventListeners() {
         }
     });
 
-    // 聊天表单提交
+    // 修改聊天表单提交逻辑
     document.getElementById('chatForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -330,6 +360,7 @@ function initEventListeners() {
         toggleButtonState(button, true);
         
         const question = document.getElementById('chatQuestion').value;
+        const context = formatHistoryContext();
 
         document.getElementById('streamOutput').textContent = '';
         
@@ -340,7 +371,8 @@ function initEventListeners() {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    question: question
+                    question: question,
+                    context: context
                 })
             });
 
@@ -356,16 +388,24 @@ function initEventListeners() {
                 result += chunk;
                 
                 updateStreamOutput(result, question);
-                
-                const outputElement = document.getElementById('streamOutput');
-                outputElement.scrollTop = outputElement.scrollHeight;
             }
+            
+            // 保存对话历史
+            saveChatMessage('user', question);
+            saveChatMessage('ai', result);
             
         } catch (error) {
             document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
         } finally {
             toggleButtonState(button, false);
         }
+    });
+
+    // 添加清除历史记录的事件监听
+    document.getElementById('clearHistoryButton').addEventListener('click', function() {
+        localStorage.removeItem(CHAT_HISTORY_KEY);
+        document.getElementById('streamOutput').textContent = '';
+        alert('历史记录已清除');
     });
 }
 
