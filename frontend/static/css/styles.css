@@ -126,7 +126,7 @@ button:hover {
 }
 
 #indexList {
-    /* max-height: 1000px; */
+    max-height: 650px;
     overflow-y: auto;
     overflow-x: auto;
     white-space: nowrap;
