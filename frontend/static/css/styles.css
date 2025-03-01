@@ -302,3 +302,19 @@ button:hover {
     border-left: 4px solid #3498db;
     /* border-left: 4px solid #2ecc71; */
 }
+
+/* 终止按钮样式 */
+.terminate-btn {
+    background-color: #dc3545;
+    margin-left: 5px;
+    min-width: 80px;
+}
+
+.terminate-btn:hover {
+    background-color: #c82333;
+}
+
+.terminate-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}

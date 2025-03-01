@@ -1,3 +1,7 @@
+// 全局变量，用于存储 AbortController 实例
+let queryAbortController = null;
+let chatAbortController = null;
+
 // 切换按钮状态的函数
 function toggleButtonState(button, isLoading) {
     if (isLoading) {
@@ -7,6 +11,11 @@ function toggleButtonState(button, isLoading) {
         button.textContent = '发送';
         button.disabled = false;
     }
+}
+
+// 切换终止按钮状态的函数
+function toggleTerminateButtonState(button, isEnabled) {
+    button.disabled = !isEnabled;
 }
 
 
@@ -310,8 +319,18 @@ function initEventListeners() {
     document.getElementById('queryForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
+        // 如果已经有一个请求正在进行中，先确保它被完全清理
+        if (queryAbortController) {
+            queryAbortController.abort();
+            // 添加一个小延迟，确保之前的连接完全关闭
+            await new Promise(resolve => setTimeout(resolve, 100));
+            queryAbortController = null;
+        }
+        
         const button = document.getElementById('queryButton');
+        const terminateButton = document.getElementById('queryTerminateButton');
         toggleButtonState(button, true);
+        toggleTerminateButtonState(terminateButton, true);
         
         const question = document.getElementById('question').value;
         const similarityTopK = parseInt(document.getElementById('similarityTopK').value) || 12;
@@ -321,6 +340,7 @@ function initEventListeners() {
         if (selectedIndexes.length === 0) {
             alert('请至少选择一个索引！');
             toggleButtonState(button, false);
+            toggleTerminateButtonState(terminateButton, false);
             return;
         }
 
@@ -330,6 +350,12 @@ function initEventListeners() {
         
         // 显示加载提示
         document.getElementById('streamOutput').innerHTML = '<div class="loading">正在检索相关文档，请稍候...</div>';
+        
+        // 创建新的 AbortController 实例
+        queryAbortController = new AbortController();
+        const signal = queryAbortController.signal;
+        
+        let reader = null;
         
         try {
             const response = await fetch('http://localhost:8001/query', {
@@ -341,13 +367,14 @@ function initEventListeners() {
                     question: question,
                     index_names: selectedIndexes,
                     similarity_top_k: similarityTopK
-                })
+                }),
+                signal: signal // 添加 signal 参数
             });
 
             // 清除加载提示
             document.getElementById('streamOutput').textContent = '';
             
-            const reader = response.body.getReader();
+            reader = response.body.getReader();
             const decoder = new TextDecoder();
             let result = '';
             
@@ -369,23 +396,70 @@ function initEventListeners() {
                 updateStreamOutput(content, question);
             }, 50); // 每50ms最多更新一次UI
             
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                
-                const chunk = decoder.decode(value, { stream: true });
-                result += chunk;
-                
-                throttledUpdate(result, question);
+            // 添加信号监听器，在请求被终止时释放reader
+            signal.addEventListener('abort', async () => {
+                if (reader) {
+                    try {
+                        // 尝试取消reader
+                        await reader.cancel();
+                        reader = null;
+                    } catch (e) {
+                        console.error('Error cancelling reader:', e);
+                    }
+                }
+            });
+            
+            while (!signal.aborted) {
+                try {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value, { stream: true });
+                    result += chunk;
+                    
+                    throttledUpdate(result, question);
+                } catch (e) {
+                    // 如果是因为终止而导致的错误，就跳出循环
+                    if (signal.aborted) break;
+                    throw e;
+                }
             }
             
-            // 确保最后一次更新显示完整内容
-            updateStreamOutput(result, question);
+            // 如果请求没有被终止，确保最后一次更新显示完整内容
+            if (!signal.aborted) {
+                updateStreamOutput(result, question);
+            }
             
         } catch (error) {
-            document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
+            // 检查是否是因为用户终止了请求
+            if (error.name === 'AbortError') {
+                document.getElementById('streamOutput').innerHTML += '<div class="error">请求已终止</div>';
+            } else {
+                document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
+                console.error('Query error:', error);
+            }
         } finally {
+            // 确保reader被释放
+            if (reader) {
+                try {
+                    await reader.cancel();
+                } catch (e) {
+                    console.error('Error cancelling reader in finally block:', e);
+                }
+                reader = null;
+            }
+            
             toggleButtonState(button, false);
+            toggleTerminateButtonState(terminateButton, false);
+            queryAbortController = null;
+        }
+    });
+    
+    // 添加查询终止按钮事件监听器
+    document.getElementById('queryTerminateButton').addEventListener('click', function() {
+        if (queryAbortController) {
+            queryAbortController.abort();
+            this.disabled = true;
         }
     });
 
@@ -393,8 +467,18 @@ function initEventListeners() {
     document.getElementById('chatForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
+        // 如果已经有一个请求正在进行中，先确保它被完全清理
+        if (chatAbortController) {
+            chatAbortController.abort();
+            // 添加一个小延迟，确保之前的连接完全关闭
+            await new Promise(resolve => setTimeout(resolve, 100));
+            chatAbortController = null;
+        }
+        
         const button = document.getElementById('chatButton');
+        const terminateButton = document.getElementById('chatTerminateButton');
         toggleButtonState(button, true);
+        toggleTerminateButtonState(terminateButton, true);
         
         const question = document.getElementById('chatQuestion').value;
         const context = formatHistoryContext();
@@ -406,6 +490,12 @@ function initEventListeners() {
         // 显示加载提示
         document.getElementById('streamOutput').innerHTML = '<div class="loading">正在处理，请稍候...</div>';
         
+        // 创建新的 AbortController 实例
+        chatAbortController = new AbortController();
+        const signal = chatAbortController.signal;
+        
+        let reader = null;
+        
         try {
             const response = await fetch('http://localhost:8001/chat', {
                 method: 'POST',
@@ -415,13 +505,14 @@ function initEventListeners() {
                 body: JSON.stringify({
                     question: question,
                     context: context
-                })
+                }),
+                signal: signal // 添加 signal 参数
             });
 
             // 清除加载提示
             document.getElementById('streamOutput').textContent = '';
             
-            const reader = response.body.getReader();
+            reader = response.body.getReader();
             const decoder = new TextDecoder();
             let result = '';
             
@@ -443,27 +534,74 @@ function initEventListeners() {
                 updateStreamOutput(content, question);
             }, 50); // 每50ms最多更新一次UI
             
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                
-                const chunk = decoder.decode(value, { stream: true });
-                result += chunk;
-                
-                throttledUpdate(result, question);
+            // 添加信号监听器，在请求被终止时释放reader
+            signal.addEventListener('abort', async () => {
+                if (reader) {
+                    try {
+                        // 尝试取消reader
+                        await reader.cancel();
+                        reader = null;
+                    } catch (e) {
+                        console.error('Error cancelling reader:', e);
+                    }
+                }
+            });
+            
+            while (!signal.aborted) {
+                try {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value, { stream: true });
+                    result += chunk;
+                    
+                    throttledUpdate(result, question);
+                } catch (e) {
+                    // 如果是因为终止而导致的错误，就跳出循环
+                    if (signal.aborted) break;
+                    throw e;
+                }
             }
             
-            // 确保最后一次更新显示完整内容
-            updateStreamOutput(result, question);
-            
-            // 保存对话历史
-            saveChatMessage('user', question);
-            saveChatMessage('ai', result);
+            // 如果请求没有被终止，确保最后一次更新显示完整内容
+            if (!signal.aborted) {
+                updateStreamOutput(result, question);
+                
+                // 保存对话历史
+                saveChatMessage('user', question);
+                saveChatMessage('ai', result);
+            }
             
         } catch (error) {
-            document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
+            // 检查是否是因为用户终止了请求
+            if (error.name === 'AbortError') {
+                document.getElementById('streamOutput').innerHTML += '<div class="error">请求已终止</div>';
+            } else {
+                document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
+                console.error('Chat error:', error);
+            }
         } finally {
+            // 确保reader被释放
+            if (reader) {
+                try {
+                    await reader.cancel();
+                } catch (e) {
+                    console.error('Error cancelling reader in finally block:', e);
+                }
+                reader = null;
+            }
+            
             toggleButtonState(button, false);
+            toggleTerminateButtonState(terminateButton, false);
+            chatAbortController = null;
+        }
+    });
+    
+    // 添加聊天终止按钮事件监听器
+    document.getElementById('chatTerminateButton').addEventListener('click', function() {
+        if (chatAbortController) {
+            chatAbortController.abort();
+            this.disabled = true;
         }
     });
 
@@ -479,4 +617,8 @@ function initEventListeners() {
 document.addEventListener('DOMContentLoaded', function() {
     initEventListeners();
     loadIndexNames();
+    
+    // 初始化终止按钮状态
+    document.getElementById('queryTerminateButton').disabled = true;
+    document.getElementById('chatTerminateButton').disabled = true;
 });

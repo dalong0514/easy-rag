@@ -29,6 +29,7 @@
                     <form id="queryForm">
                         <textarea id="question" placeholder="输入你的问题..."></textarea>
                         <button type="submit" id="queryButton">发送</button>
+                        <button type="button" id="queryTerminateButton" class="terminate-btn">终止</button>
                         <input type="number" id="similarityTopK" placeholder="输入similarity_top_k（默认10）" value="10">
                     </form>
                     <div id="queryResult"></div>
@@ -39,6 +40,7 @@
                     <form id="chatForm">
                         <textarea id="chatQuestion" placeholder="输入你的问题..."></textarea>
                         <button type="submit" id="chatButton">发送</button>
+                        <button type="button" id="chatTerminateButton" class="terminate-btn">终止</button>
                         <button type="button" id="clearHistoryButton" class="btn">清除历史记录</button>
                     </form>
                     <div id="chatResult"></div>
