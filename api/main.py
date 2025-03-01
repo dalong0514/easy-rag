@@ -24,9 +24,9 @@ app.add_middleware(
     allow_headers=["*"],  # 允许所有头
 )
 
-api_key = get_api_key()
-base_url= get_base_url()
-model_name = "deepseek-r1-huoshan"
+api_key = get_api_key("deepseek")
+base_url= get_base_url("deepseek")
+model_name = "deepseek-reasoner"
 chat_record_dir= get_chat_record_dir()
 
 model = ChatOpenAI(
