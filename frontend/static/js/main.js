@@ -217,38 +217,49 @@ function initEventListeners() {
         }
     });
 
-    // 修改流式输出部分
+    // 修改流式输出部分 - 优化性能
     let currentContent = ''; // 用于存储当前 content
+    let lastProcessedLength = 0; // 用于跟踪上次处理的内容长度
+    
     function updateStreamOutput(content, question) {
         const outputElement = document.getElementById('streamOutput');
         
         // 将问题和回答内容拼接
         const fullContent = question ? `提示词：${question}\n\n${content}` : content;
         currentContent = fullContent; // 更新当前 content
-        // 将内容按<think>和</think>分割
-        const parts = fullContent.split(/(<think>|<\/think>)/g);
         
-        let formattedContent = '';
-        let isThinking = false;
-        
-        parts.forEach(part => {
-            if (part === '<think>') {
-                isThinking = true;
-                formattedContent += `<div class="thinking-content">`;
-            } else if (part === '</think>') {
-                isThinking = false;
-                formattedContent += `</div>`;
-            } else {
-                if (isThinking) {
-                    formattedContent += part;
+        // 只处理新增的内容，避免重复处理整个内容
+        if (fullContent.length > lastProcessedLength) {
+            // 将内容按<think>和</think>分割
+            const parts = fullContent.split(/(<think>|<\/think>)/g);
+            
+            let formattedContent = '';
+            let isThinking = false;
+            
+            parts.forEach(part => {
+                if (part === '<think>') {
+                    isThinking = true;
+                    formattedContent += `<div class="thinking-content">`;
+                } else if (part === '</think>') {
+                    isThinking = false;
+                    formattedContent += `</div>`;
                 } else {
-                    formattedContent += `<div>${part}</div>`;
+                    if (isThinking) {
+                        formattedContent += part;
+                    } else {
+                        formattedContent += `<div>${part}</div>`;
+                    }
                 }
-            }
-        });
-        
-        outputElement.innerHTML = marked.parse(formattedContent);
-        outputElement.scrollTop = outputElement.scrollHeight;
+            });
+            
+            // 使用requestAnimationFrame优化渲染性能
+            requestAnimationFrame(() => {
+                outputElement.innerHTML = marked.parse(formattedContent);
+                outputElement.scrollTop = outputElement.scrollHeight;
+            });
+            
+            lastProcessedLength = fullContent.length;
+        }
     }
 
     // 复制结果到剪贴板
@@ -295,7 +306,7 @@ function initEventListeners() {
         }).join('\n');
     }
 
-    // 查询表单提交
+    // 查询表单提交 - 优化性能
     document.getElementById('queryForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -313,7 +324,12 @@ function initEventListeners() {
             return;
         }
 
+        // 重置输出区域和处理状态
         document.getElementById('streamOutput').textContent = '';
+        lastProcessedLength = 0;
+        
+        // 显示加载提示
+        document.getElementById('streamOutput').innerHTML = '<div class="loading">正在检索相关文档，请稍候...</div>';
         
         try {
             const response = await fetch('http://localhost:8001/query', {
@@ -328,10 +344,31 @@ function initEventListeners() {
                 })
             });
 
+            // 清除加载提示
+            document.getElementById('streamOutput').textContent = '';
+            
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let result = '';
-
+            
+            // 使用节流函数来限制更新频率
+            const throttle = (func, limit) => {
+                let inThrottle;
+                return function() {
+                    const args = arguments;
+                    const context = this;
+                    if (!inThrottle) {
+                        func.apply(context, args);
+                        inThrottle = true;
+                        setTimeout(() => inThrottle = false, limit);
+                    }
+                };
+            };
+            
+            const throttledUpdate = throttle((content, question) => {
+                updateStreamOutput(content, question);
+            }, 50); // 每50ms最多更新一次UI
+            
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
@@ -339,11 +376,11 @@ function initEventListeners() {
                 const chunk = decoder.decode(value, { stream: true });
                 result += chunk;
                 
-                updateStreamOutput(result, question);
-                
-                const outputElement = document.getElementById('streamOutput');
-                outputElement.scrollTop = outputElement.scrollHeight;
+                throttledUpdate(result, question);
             }
+            
+            // 确保最后一次更新显示完整内容
+            updateStreamOutput(result, question);
             
         } catch (error) {
             document.getElementById('streamOutput').textContent = `Error: ${error.message}`;
@@ -352,7 +389,7 @@ function initEventListeners() {
         }
     });
 
-    // 修改聊天表单提交逻辑
+    // 修改聊天表单提交逻辑 - 优化性能
     document.getElementById('chatForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -362,7 +399,12 @@ function initEventListeners() {
         const question = document.getElementById('chatQuestion').value;
         const context = formatHistoryContext();
 
+        // 重置输出区域和处理状态
         document.getElementById('streamOutput').textContent = '';
+        lastProcessedLength = 0;
+        
+        // 显示加载提示
+        document.getElementById('streamOutput').innerHTML = '<div class="loading">正在处理，请稍候...</div>';
         
         try {
             const response = await fetch('http://localhost:8001/chat', {
@@ -376,10 +418,31 @@ function initEventListeners() {
                 })
             });
 
+            // 清除加载提示
+            document.getElementById('streamOutput').textContent = '';
+            
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let result = '';
-
+            
+            // 使用节流函数来限制更新频率
+            const throttle = (func, limit) => {
+                let inThrottle;
+                return function() {
+                    const args = arguments;
+                    const context = this;
+                    if (!inThrottle) {
+                        func.apply(context, args);
+                        inThrottle = true;
+                        setTimeout(() => inThrottle = false, limit);
+                    }
+                };
+            };
+            
+            const throttledUpdate = throttle((content, question) => {
+                updateStreamOutput(content, question);
+            }, 50); // 每50ms最多更新一次UI
+            
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
@@ -387,8 +450,11 @@ function initEventListeners() {
                 const chunk = decoder.decode(value, { stream: true });
                 result += chunk;
                 
-                updateStreamOutput(result, question);
+                throttledUpdate(result, question);
             }
+            
+            // 确保最后一次更新显示完整内容
+            updateStreamOutput(result, question);
             
             // 保存对话历史
             saveChatMessage('user', question);

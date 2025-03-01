@@ -74,20 +74,27 @@ async def query_from_documents_api(request: QueryRequest):
         )
         
         async def generate():
-            # Call the basic query function
+            # 立即发送一个初始消息，告知用户正在处理
+            yield "<think>\n正在检索相关文档...\n</think>\n"
+            
+            # 异步调用文档检索函数
             source_nodes = basic_query_from_documents(
                 question=request.question,
                 index_names=request.index_names,
                 similarity_top_k=request.similarity_top_k
             )
 
+            # 通知用户文档检索完成
+            yield "<think>\n文档检索完成，正在生成回答...\n</think>\n"
+            
             context = "\n".join([n.text for n in source_nodes])
             
+            # 在后台处理数据源信息，不阻塞响应流
             print_data = print_data_sources(source_nodes)
             print(f"Number of source nodes: {len(source_nodes)}")
 
             # 流式返回 LLM 的响应
-            full_response = ""
+            full_response = "<think>\n正在检索相关文档...\n</think>\n<think>\n文档检索完成，正在生成回答...\n</think>\n"
             prompt_template = ChatPromptTemplate([
                 ("user", "**response with \"\<think\>\n\" at the beginning of every output.**\nUse the following pieces of context to answer the question at the end.\n{context}\nQuestion: {question}")
             ])
@@ -98,10 +105,15 @@ async def query_from_documents_api(request: QueryRequest):
                 yield chunk.content
                 full_response += chunk.content
             
-            # 最后写入文件
-            index_names_str = ', '.join(request.index_names)
-            with open(chat_record_file, 'w', encoding='utf-8') as f:
-                f.write(f"{file_name}\n\n[question]:\n\n{request.question}\n\n[index_names]:\n\n{index_names_str}\n\n[answer]:\n\n{full_response}\n\n[source_datas]:\n\n{print_data}")
+            # 异步写入文件，不阻塞响应流
+            async def write_record_file():
+                index_names_str = ', '.join(request.index_names)
+                with open(chat_record_file, 'w', encoding='utf-8') as f:
+                    f.write(f"{file_name}\n\n[question]:\n\n{request.question}\n\n[index_names]:\n\n{index_names_str}\n\n[answer]:\n\n{full_response}\n\n[source_datas]:\n\n{print_data}")
+            
+            # 在后台启动文件写入任务
+            import asyncio
+            asyncio.create_task(write_record_file())
 
         return StreamingResponse(generate(), media_type="text/plain")
         
@@ -119,7 +131,10 @@ async def chat_with_llm_api(request: ChatRequest):
         )
 
         async def generate():
-            full_response = ""
+            # 立即发送一个初始消息，告知用户正在处理
+            yield "<think>\n正在处理您的请求...\n</think>\n"
+            
+            full_response = "<think>\n正在处理您的请求...\n</think>\n"
             prompt_template = ChatPromptTemplate([
                 ("user", "**response with \"\<think\>\n\" at the beginning of every output**\nContext: {context}\nQuestion: {question}")
             ])
@@ -133,8 +148,14 @@ async def chat_with_llm_api(request: ChatRequest):
                 yield chunk.content
                 full_response += chunk.content
             
-            with open(chat_record_file, 'w', encoding='utf-8') as f:
-                f.write(f"{file_name}\n\n[question]:\n\n{request.question}\n\n[answer]:\n\n{full_response}")
+            # 异步写入文件，不阻塞响应流
+            async def write_record_file():
+                with open(chat_record_file, 'w', encoding='utf-8') as f:
+                    f.write(f"{file_name}\n\n[question]:\n\n{request.question}\n\n[answer]:\n\n{full_response}")
+            
+            # 在后台启动文件写入任务
+            import asyncio
+            asyncio.create_task(write_record_file())
 
         return StreamingResponse(generate(), media_type="text/plain")
         
