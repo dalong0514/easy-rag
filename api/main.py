@@ -96,7 +96,7 @@ async def query_from_documents_api(request: QueryRequest):
             # 流式返回 LLM 的响应
             full_response = "<think>\n正在检索相关文档...\n</think>\n<think>\n文档检索完成，正在生成回答...\n</think>\n"
             prompt_template = ChatPromptTemplate([
-                ("user", "**response with \"\<think\>\n\" at the beginning of every output.**\nUse the following pieces of context to answer the question at the end.\n{context}\nQuestion: {question}")
+                ("user", "**response with \"<think>\n\" at the beginning of every output.**\nUse the following pieces of context to answer the question at the end.\n{context}\nQuestion: {question}")
             ])
             prompt = prompt_template.invoke({"context": context, "question": request.question})
             response = model.stream(prompt)
