@@ -26,6 +26,7 @@ def get_api_key(service="default"):
     load_env()
     key_mapping = {
         "default": "API_KEY",
+        "local": "LOCAL_API_KEY",
         "openai": "OPENAI_API_KEY",
         "google": "GOOGLE_API_KEY",
         "grok": "GROK_API_KEY",
@@ -40,6 +41,7 @@ def get_base_url(service="default"):
     load_env()
     key_mapping = {
         "default": "BASE_URL",
+        "local": "LOCAL_BASE_URL",
         "grok": "GROK_BASE_URL",
         "deepseek": "DEEPSEEK_BASE_URL",
         "fireworks": "FIREWORKS_BASE_URL",
