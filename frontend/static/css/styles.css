@@ -5,7 +5,7 @@ body {
 }
 
 .container {
-    max-width: 2000px;
+    max-width: 2400px;
     margin: 0 auto;
 }
 
@@ -254,6 +254,9 @@ button:hover {
 }
 
 .btn-danger {
+    width: 35%;
+    margin-left: 5%;
+    padding: 8px;
     background-color: #dc3545;
     color: white;
 }
