@@ -5,7 +5,7 @@ body {
 }
 
 .container {
-    max-width: 1600px;
+    max-width: 2000px;
     margin: 0 auto;
 }
 
@@ -26,6 +26,14 @@ body {
     width: 15%;
 }
 
+.input-section {
+    width: 35%;
+}
+
+.output-section {
+    width: 50%;
+}
+
 .filter-input {
     width: 100%;
     padding: 8px;
@@ -34,14 +42,6 @@ body {
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
-}
-
-.input-section {
-    width: 35%;
-}
-
-.output-section {
-    width: 50%;
 }
 
 /* 修改 section 的高度 */
