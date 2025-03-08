@@ -318,3 +318,38 @@ button:hover {
     background-color: #6c757d;
     cursor: not-allowed;
 }
+
+/* 已选择的索引列表样式 */
+.selected-index-list {
+    margin-top: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: #f9f9f9;
+}
+
+.selected-index-list .no-selection {
+    color: #888;
+    font-style: italic;
+    text-align: center;
+    padding: 5px;
+}
+
+.selected-index-list .selected-index-item {
+    background-color: #e3f2fd;
+    border-radius: 3px;
+    padding: 5px 8px;
+    margin: 3px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.selected-index-list .selected-index-item .remove-btn {
+    cursor: pointer;
+    color: #f44336;
+    font-weight: bold;
+    margin-left: 8px;
+}

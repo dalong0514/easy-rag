@@ -131,6 +131,51 @@ const UiUtils = {
         return Array.from(document.querySelectorAll('.index-item.selected'))
             .map(item => item.textContent);
     },
+    
+    // 更新已选择的索引列表
+    updateSelectedIndexesList() {
+        const selectedIndexes = this.getSelectedIndexes();
+        const selectedIndexList = document.getElementById('selectedIndexList');
+        
+        // 清空当前内容
+        selectedIndexList.innerHTML = '';
+        
+        if (selectedIndexes.length === 0) {
+            // 如果没有选中的索引，显示提示信息
+            const noSelection = document.createElement('div');
+            noSelection.className = 'no-selection';
+            noSelection.textContent = '未选择任何索引';
+            selectedIndexList.appendChild(noSelection);
+        } else {
+            // 为每个选中的索引创建一个元素
+            selectedIndexes.forEach(indexName => {
+                const indexItem = document.createElement('div');
+                indexItem.className = 'selected-index-item';
+                
+                const indexText = document.createElement('span');
+                indexText.textContent = indexName;
+                
+                const removeBtn = document.createElement('span');
+                removeBtn.className = 'remove-btn';
+                removeBtn.textContent = '×';
+                removeBtn.setAttribute('title', '移除此索引');
+                
+                // 点击移除按钮时，在主列表中找到对应索引并模拟点击
+                removeBtn.addEventListener('click', function() {
+                    const indexListItems = document.querySelectorAll('#indexList .index-item');
+                    indexListItems.forEach(item => {
+                        if (item.textContent === indexName && item.classList.contains('selected')) {
+                            item.click(); // 这将切换主列表中的选择状态
+                        }
+                    });
+                });
+                
+                indexItem.appendChild(indexText);
+                indexItem.appendChild(removeBtn);
+                selectedIndexList.appendChild(indexItem);
+            });
+        }
+    },
 
     // 获取选中的要删除的索引
     getSelectedIndexesToDelete() {
@@ -317,10 +362,12 @@ const IndexManager = {
                 
                 // 添加点击事件
                 document.querySelectorAll('.index-item').forEach(item => {
-                    item.addEventListener('click', function() {
-                        // 切换选中状态
-                        this.classList.toggle('selected');
-                    });
+                item.addEventListener('click', function() {
+                    // 切换选中状态
+                    this.classList.toggle('selected');
+                    // 更新已选择的索引列表
+                    UiUtils.updateSelectedIndexesList();
+                });
                 });
             } else {
                 indexList.innerHTML = '<div class="no-data">没有可用的索引</div>';
