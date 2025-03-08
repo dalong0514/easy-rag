@@ -486,6 +486,17 @@ const IndexManager = {
             const indexName = item.textContent.toLowerCase();
             item.style.display = indexName.includes(normalizedFilter) ? 'block' : 'none';
         });
+    },
+    
+    // 过滤删除索引列表
+    filterDeleteIndexList(filterText) {
+        const indexItems = document.querySelectorAll('#deleteIndexList .index-item');
+        const normalizedFilter = filterText.toLowerCase();
+        
+        indexItems.forEach(item => {
+            const indexName = item.querySelector('label').textContent.toLowerCase();
+            item.style.display = indexName.includes(normalizedFilter) ? 'block' : 'none';
+        });
     }
 };
 
@@ -791,10 +802,16 @@ const EventHandler = {
     // 初始化索引过滤相关事件
     initIndexFilterEvents() {
         const indexFilter = document.getElementById('indexFilter');
+        const deleteIndexFilter = document.getElementById('deleteIndexFilter');
         
-        // 添加输入事件监听器
+        // 添加主页面索引过滤输入事件监听器
         indexFilter.addEventListener('input', function() {
             IndexManager.filterIndexList(this.value);
+        });
+        
+        // 添加删除索引页面过滤输入事件监听器
+        deleteIndexFilter.addEventListener('input', function() {
+            IndexManager.filterDeleteIndexList(this.value);
         });
     },
     
