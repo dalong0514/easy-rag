@@ -24,10 +24,10 @@ app.add_middleware(
     allow_headers=["*"],  # 允许所有头
 )
 
-api_key = get_api_key("local")
-base_url= get_base_url("local")
-model_name = "qwq:latest"
-# model_name = "deepseek-reasoner"
+api_key = get_api_key()
+base_url= get_base_url()
+# model_name = "qwq:latest"
+model_name = "deepseek-reasoner"
 chat_record_dir= get_chat_record_dir()
 
 model = ChatOpenAI(
