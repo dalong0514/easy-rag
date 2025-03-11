@@ -30,6 +30,15 @@
                 <div class="section">
                     <h2>RAG 查询文档</h2>
                     <form id="queryForm">
+                        <div class="model-selection">
+                            <label for="modelSelect">选择模型：</label>
+                            <div class="model-dropdown-container">
+                                <input type="text" id="modelSelectInput" readonly placeholder="选择一个模型" />
+                                <div id="modelDropdown" class="model-dropdown">
+                                    <div class="loading">加载中...</div>
+                                </div>
+                            </div>
+                        </div>
                         <textarea id="question" placeholder="输入你的问题..."></textarea>
                         <button type="submit" id="queryButton">发送</button>
                         <button type="button" id="queryTerminateButton" class="terminate-btn">终止</button>
@@ -41,6 +50,15 @@
                 <div class="section">
                     <h2>与 LLM 聊天</h2>
                     <form id="chatForm">
+                        <div class="model-selection">
+                            <label for="chatModelSelect">选择模型：</label>
+                            <div class="model-dropdown-container">
+                                <input type="text" id="chatModelSelectInput" readonly placeholder="选择一个模型" />
+                                <div id="chatModelDropdown" class="model-dropdown">
+                                    <div class="loading">加载中...</div>
+                                </div>
+                            </div>
+                        </div>
                         <textarea id="chatQuestion" placeholder="输入你的问题..."></textarea>
                         <button type="submit" id="chatButton">发送</button>
                         <button type="button" id="chatTerminateButton" class="terminate-btn">终止</button>
@@ -118,5 +136,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/model-manager.js') }}"></script>
 </body>
 </html>
