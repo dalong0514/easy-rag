@@ -255,19 +255,61 @@ const StreamProcessor = {
                 let formattedReferences = '';
                 const referenceLines = referencesContent.trim().split('\n');
                 
-                referenceLines.forEach(line => {
+                referenceLines.forEach((line, index) => {
                     if (line.trim()) {
                         // 识别引用项的形式 [index]: content
                         const match = line.match(/^\[(\d+)\]:\s*(.*)/);
                         if (match) {
-                            const index = match[1];
-                            const content = match[2];
-                            formattedReferences += `<div class="reference-item" id="ref-${index}">
-                                <div class="reference-index">[${index}]</div>
-                                <div class="reference-content">${content}</div>
-                            </div>`;
-                        } else {
-                            formattedReferences += `<p>${line}</p>`;
+                            const refIndex = match[1];
+                            let startContent = match[2];
+                            let metadata = '';
+                            
+                            // 检查是否包含元信息
+                            if (startContent.startsWith('Metadata:')) {
+                                metadata = startContent.substring('Metadata:'.length).trim();
+                                
+                                // 从下一行开始收集文本内容，直到找到下一个引用项或结束
+                                let content = '';
+                                let nextLineIndex = index + 1;
+                                while (nextLineIndex < referenceLines.length && 
+                                      !referenceLines[nextLineIndex].match(/^\[\d+\]:/)) {
+                                    if (referenceLines[nextLineIndex].trim()) {
+                                        content += referenceLines[nextLineIndex] + '\n';
+                                    }
+                                    nextLineIndex++;
+                                }
+                                
+                                formattedReferences += `<div class="reference-item" id="ref-${refIndex}">
+                                    <div class="reference-index">[${refIndex}]</div>
+                                    <div class="reference-content">
+                                        ${metadata ? `<div class="reference-metadata">${metadata}</div>` : ''}
+                                        <div class="reference-text">${content.trim()}</div>
+                                    </div>
+                                </div>`;
+                            } else {
+                                // 没有元信息，只有文本内容
+                                // 从当前行开始收集文本内容，直到找到下一个引用项或结束
+                                let content = startContent;
+                                if (content.trim()) content += '\n';
+                                
+                                let nextLineIndex = index + 1;
+                                while (nextLineIndex < referenceLines.length && 
+                                      !referenceLines[nextLineIndex].match(/^\[\d+\]:/)) {
+                                    if (referenceLines[nextLineIndex].trim()) {
+                                        content += referenceLines[nextLineIndex] + '\n';
+                                    }
+                                    nextLineIndex++;
+                                }
+                                
+                                formattedReferences += `<div class="reference-item" id="ref-${refIndex}">
+                                    <div class="reference-index">[${refIndex}]</div>
+                                    <div class="reference-content">
+                                        <div class="reference-text">${content.trim()}</div>
+                                    </div>
+                                </div>`;
+                            }
+                        } else if (!line.match(/^\[\d+\]:/)) {
+                            // 这里不需要进行处理，因为内容已经在上面的逻辑中捕获
                         }
                     }
                 });

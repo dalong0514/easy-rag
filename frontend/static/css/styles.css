@@ -424,6 +424,23 @@ button:hover {
     flex: 1;
 }
 
+.reference-metadata {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+    padding: 3px 5px;
+    background-color: #f0f0f0;
+    border-radius: 3px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.reference-text {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
 /* 引用链接样式 */
 .citation-link {
     color: #3498db;

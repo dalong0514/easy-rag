@@ -125,7 +125,18 @@ async def query_from_documents_api(request: QueryRequest):
             # 添加引用信息到响应末尾
             citations = "<references>\n"
             for i, n in enumerate(source_nodes):
-                citations += f"[{i}]: {n.text}\n"
+                citations += f"[{i}]: "
+                if hasattr(n, 'metadata') and n.metadata:
+                    # 将元数据格式化为易读的形式
+                    metadata_dict = n.metadata
+                    if isinstance(metadata_dict, dict):
+                        metadata_str = ", ".join([f"{k}: {v}" for k, v in metadata_dict.items() if k and v])
+                    else:
+                        metadata_str = str(n.metadata).replace('\n', ' ')
+                    citations += f"Metadata: {metadata_str}\n"
+                else:
+                    citations += "\n"  # 确保即使没有元信息也添加一个换行
+                citations += f"{n.text}\n\n"  # 在每个引用项之后添加额外的空行
             citations += "</references>"
             
             yield f"\n\n{citations}"
