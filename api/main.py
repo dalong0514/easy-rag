@@ -87,7 +87,7 @@ async def query_from_documents_api(request: QueryRequest):
             # 通知用户文档检索完成
             yield "<think>\n文档检索完成，正在生成回答...\n</think>\n"
             
-            context = "\n".join([n.text for n in source_nodes])
+            context = "\n".join([f"[indexpage {i} begin]{n.text}[indexpage {i} end]" for i, n in enumerate(source_nodes)])
             
             # 在后台处理数据源信息，不阻塞响应流
             print_data = print_data_sources(source_nodes)
@@ -96,8 +96,9 @@ async def query_from_documents_api(request: QueryRequest):
             # 流式返回 LLM 的响应
             full_response = "<think>\n正在检索相关文档...\n</think>\n<think>\n文档检索完成，正在生成回答...\n</think>\n"
             prompt_template = ChatPromptTemplate([
-                ("user", "**response with \"<think>\n\" at the beginning of every output.**\nUse the following pieces of context to answer the question at the end.\n{context}\nQuestion: {question}")
+                ("user", "**response with \"\<think\>\n\" at the beginning of every output.**\nUse the following pieces of context to answer the question at the end.\n{context}\nQuestion: {question}")
             ])
+            
             prompt = prompt_template.invoke({"context": context, "question": request.question})
             response = model.stream(prompt)
             

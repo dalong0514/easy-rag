@@ -67,9 +67,9 @@ def get_all_files_from_directory(directory_path, file_extension=None):
 def print_data_sources(source_datas):
     full_content = ""
     print("\n\nsource_datas----------------------------------------------------------------source_datas")
-    for n in source_datas:
-        full_content += f"score: {n.score}\n\n{n.metadata}\n\n{n.text}\n----------------------------------------------------------------------------------------\n"
-        print(f"{n.score}\n\n{n.metadata}\n\n{n.text}\n----------------------------------------------------------------------------------------\n")
+    for i, n in enumerate(source_datas):
+        full_content += f"score: {n.score}\n\n{n.metadata}\n\n{{[indexpage {i} begin]{n.text}[indexpage {i} end]}}\n----------------------------------------------------------------------------------------\n"
+        print(f"{n.score}\n\n{n.metadata}\n\nf\"{{[indexpage {i} begin]{n.text}[indexpage {i} end]}}\"\n----------------------------------------------------------------------------------------\n")
     return full_content
 
 
