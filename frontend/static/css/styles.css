@@ -356,3 +356,79 @@ button:hover {
     font-weight: bold;
     margin-left: 8px;
 }
+
+/* 引用部分样式 */
+.references-container {
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.references-header {
+    padding: 10px;
+    background-color: #f1f1f1;
+    border-bottom: 1px solid #ddd;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.references-toggle {
+    background: none;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    color: #666;
+    padding: 0 5px;
+}
+
+.references-content {
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-size: 14px;
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+.references-content p {
+    margin: 5px 0;
+}
+
+/* 引用项样式 */
+.references-content [id^="ref-"] {
+    padding: 5px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+/* 新增引用项样式 */
+.reference-item {
+    padding: 8px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+}
+
+.reference-index {
+    font-weight: bold;
+    color: #666;
+    margin-right: 10px;
+    min-width: 30px;
+}
+
+.reference-content {
+    flex: 1;
+}
+
+/* 引用链接样式 */
+.citation-link {
+    color: #3498db;
+    font-size: 0.8em;
+    vertical-align: super;
+    cursor: pointer;
+    text-decoration: none;
+}

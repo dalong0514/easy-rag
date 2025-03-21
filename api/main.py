@@ -122,6 +122,15 @@ async def query_from_documents_api(request: QueryRequest):
                 yield chunk.content
                 full_response += chunk.content
             
+            # 添加引用信息到响应末尾
+            citations = "<references>\n"
+            for i, n in enumerate(source_nodes):
+                citations += f"[{i}]: {n.text}\n"
+            citations += "</references>"
+            
+            yield f"\n\n{citations}"
+            full_response += f"\n\n{citations}"
+            
             # 异步写入文件，不阻塞响应流
             async def write_record_file():
                 index_names_str = ', '.join(request.index_names)

@@ -213,8 +213,22 @@ const StreamProcessor = {
         
         // 只处理新增的内容，避免重复处理整个内容
         if (fullContent.length > this.lastProcessedLength) {
+            // 检查是否有引用部分
+            const hasReferences = fullContent.includes("<references>");
+            let mainContent = fullContent;
+            let referencesContent = '';
+            
+            // 如果有引用部分，分离主要内容和引用内容
+            if (hasReferences) {
+                const parts = fullContent.split("<references>");
+                mainContent = parts[0];
+                if (parts.length > 1) {
+                    referencesContent = parts[1].replace("</references>", "");
+                }
+            }
+            
             // 将内容按<think>和</think>分割
-            const parts = fullContent.split(/(<think>|<\/think>)/g);
+            const parts = mainContent.split(/(<think>|<\/think>)/g);
             
             let formattedContent = '';
             let isThinking = false;
@@ -235,14 +249,165 @@ const StreamProcessor = {
                 }
             });
             
+            // 如果有引用部分，添加引用部分的HTML
+            if (referencesContent) {
+                // 格式化引用内容
+                let formattedReferences = '';
+                const referenceLines = referencesContent.trim().split('\n');
+                
+                referenceLines.forEach(line => {
+                    if (line.trim()) {
+                        // 识别引用项的形式 [index]: content
+                        const match = line.match(/^\[(\d+)\]:\s*(.*)/);
+                        if (match) {
+                            const index = match[1];
+                            const content = match[2];
+                            formattedReferences += `<div class="reference-item" id="ref-${index}">
+                                <div class="reference-index">[${index}]</div>
+                                <div class="reference-content">${content}</div>
+                            </div>`;
+                        } else {
+                            formattedReferences += `<p>${line}</p>`;
+                        }
+                    }
+                });
+                
+                formattedContent += `<div class="references-container">
+                    <div class="references-header">
+                        <span>引用</span>
+                        <button class="references-toggle">▼</button>
+                    </div>
+                    <div class="references-content">
+                        ${formattedReferences}
+                    </div>
+                </div>`;
+            }
+            
             // 使用requestAnimationFrame优化渲染性能
             requestAnimationFrame(() => {
                 outputElement.innerHTML = marked.parse(formattedContent);
+                
+                // 处理引用链接
+                this.processCitationLinks(outputElement);
+                
+                // 添加引用区域的折叠/展开功能
+                const toggleButtons = outputElement.querySelectorAll('.references-toggle');
+                toggleButtons.forEach(button => {
+                    if (!button.hasListener) {
+                        button.addEventListener('click', () => {
+                            const container = button.closest('.references-container');
+                            const content = container.querySelector('.references-content');
+                            if (content.style.display === 'none') {
+                                content.style.display = 'block';
+                                button.textContent = '▼';
+                            } else {
+                                content.style.display = 'none';
+                                button.textContent = '▶';
+                            }
+                        });
+                        button.hasListener = true;
+                    }
+                });
+                
                 outputElement.scrollTop = outputElement.scrollHeight;
             });
             
             this.lastProcessedLength = fullContent.length;
         }
+    },
+    
+    // 处理引用链接
+    processCitationLinks(element) {
+        // 找到所有引用标记
+        const regex = /\[citation:(\d+)\]/g;
+        const textNodes = [];
+        
+        // 递归获取所有文本节点
+        function getTextNodes(node) {
+            if (node.nodeType === 3) { // 文本节点
+                textNodes.push(node);
+            } else if (node.nodeType === 1) { // 元素节点
+                for (let i = 0; i < node.childNodes.length; i++) {
+                    getTextNodes(node.childNodes[i]);
+                }
+            }
+        }
+        
+        getTextNodes(element);
+        
+        // 处理每个文本节点
+        textNodes.forEach(textNode => {
+            let match;
+            let content = textNode.nodeValue;
+            let hasMatch = regex.test(content);
+            
+            if (hasMatch) {
+                // 重置regex状态
+                regex.lastIndex = 0;
+                
+                let fragments = [];
+                let lastIndex = 0;
+                
+                // 遍历所有引用标记
+                while ((match = regex.exec(content)) !== null) {
+                    // 添加引用标记前的文本
+                    if (match.index > lastIndex) {
+                        fragments.push(document.createTextNode(content.substring(lastIndex, match.index)));
+                    }
+                    
+                    // 创建引用链接
+                    const citationLink = document.createElement('a');
+                    citationLink.href = '#';
+                    citationLink.className = 'citation-link';
+                    citationLink.textContent = `[${match[1]}]`;
+                    citationLink.dataset.ref = match[1];
+                    
+                    // 添加点击事件
+                    citationLink.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        // 滚动到对应的引用位置
+                        const refContent = document.querySelector('.references-content');
+                        if (refContent) {
+                            // 确保引用内容可见
+                            const container = refContent.closest('.references-container');
+                            const content = container.querySelector('.references-content');
+                            if (content.style.display === 'none') {
+                                content.style.display = 'block';
+                                const button = container.querySelector('.references-toggle');
+                                button.textContent = '▼';
+                            }
+                            
+                            // 高亮对应的引用内容
+                            const allRefs = refContent.querySelectorAll('.reference-item');
+                            allRefs.forEach(ref => {
+                                ref.style.backgroundColor = '';
+                            });
+                            
+                            // 获取目标引用项
+                            const targetRef = document.getElementById(`ref-${this.dataset.ref}`);
+                            if (targetRef) {
+                                targetRef.style.backgroundColor = '#ffffcc';
+                                targetRef.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }
+                        }
+                    });
+                    
+                    fragments.push(citationLink);
+                    
+                    lastIndex = match.index + match[0].length;
+                }
+                
+                // 添加最后一部分文本
+                if (lastIndex < content.length) {
+                    fragments.push(document.createTextNode(content.substring(lastIndex)));
+                }
+                
+                // 替换原始文本节点
+                const parent = textNode.parentNode;
+                fragments.forEach(fragment => parent.insertBefore(fragment, textNode));
+                parent.removeChild(textNode);
+            }
+        });
     },
     
     // 重置处理状态
