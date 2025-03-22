@@ -95,10 +95,11 @@ const ApiService = {
     },
     
     // 联网搜索
-    async webSearch(question, signal) {
+    async webSearch(question, similarityTopK, signal) {
         try {
             const response = await this.fetchData('web-search', {
-                question: question
+                question: question,
+                similarity_top_k: similarityTopK
             }, { signal });
             
             return response;
@@ -754,7 +755,8 @@ const UnifiedQueryProcessor = {
             // 根据当前模式选择请求类型
             if (isWebMode) {
                 // 联网模式
-                response = await ApiService.webSearch(question, signal);
+                similarityTopK = parseInt(document.getElementById('similarityTopK').value) || 10;
+                response = await ApiService.webSearch(question, similarityTopK, signal);
             } else if (isRAGMode) {
                 // RAG模式
                 response = await ApiService.query(question, selectedIndexes, similarityTopK, signal);

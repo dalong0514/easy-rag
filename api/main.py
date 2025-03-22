@@ -60,7 +60,7 @@ model = ChatOpenAI(
 class QueryRequest(BaseModel):
     question: str
     index_names: List[str]
-    similarity_top_k: int = 12
+    similarity_top_k: int = 10
     chat_record_dir: str = chat_record_dir
 
 class ChatRequest(BaseModel):
@@ -86,6 +86,7 @@ class DeleteIndexRequest(BaseModel):
 
 class WebSearchRequest(BaseModel):
     question: str
+    similarity_top_k: int = 10
     chat_record_dir: str = chat_record_dir
 
 @app.post("/query")
@@ -310,7 +311,7 @@ async def web_search_api(request: WebSearchRequest):
                 }
                 params = {
                     "q": clean_question,
-                    "count": 10
+                    "count": request.similarity_top_k
                 }
                 
                 search_response = requests.get(brave_api_url, headers=headers, params=params)
