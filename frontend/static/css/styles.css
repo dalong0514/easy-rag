@@ -572,3 +572,14 @@ input:checked + .slider:before {
     padding: 3px 6px; /* 增加内边距 */
     border-radius: 4px; /* 添加圆角 */
 }
+
+.web-mode-toggle {
+    margin-left: 10px;
+}
+
+/* 确保相邻的模式切换按钮在小屏幕上能正确换行 */
+@media (max-width: 768px) {
+    .mode-toggle {
+        margin-top: 5px;
+    }
+}

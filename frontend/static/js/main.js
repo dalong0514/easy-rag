@@ -92,6 +92,20 @@ const ApiService = {
             console.error('Chat error:', error);
             throw error;
         }
+    },
+    
+    // 联网搜索
+    async webSearch(question, signal) {
+        try {
+            const response = await this.fetchData('web-search', {
+                question: question
+            }, { signal });
+            
+            return response;
+        } catch (error) {
+            console.error('Web search error:', error);
+            throw error;
+        }
     }
 };
 
@@ -708,11 +722,13 @@ const UnifiedQueryProcessor = {
         const question = document.getElementById('unifiedQuestion').value;
         // 获取当前模式（RAG查询或聊天）
         const isRAGMode = document.getElementById('modeToggle').checked;
+        // 获取是否为联网模式
+        const isWebMode = document.getElementById('webModeToggle').checked;
         
-        // 如果是RAG模式，需要获取索引和similarityTopK
+        // 如果是RAG模式且不是联网模式，需要获取索引和similarityTopK
         let selectedIndexes = [];
         let similarityTopK = 10;
-        if (isRAGMode) {
+        if (isRAGMode && !isWebMode) {
             selectedIndexes = UiUtils.getSelectedIndexes();
             similarityTopK = parseInt(document.getElementById('similarityTopK').value) || 10;
             
@@ -736,10 +752,14 @@ const UnifiedQueryProcessor = {
         
         try {
             // 根据当前模式选择请求类型
-            if (isRAGMode) {
+            if (isWebMode) {
+                // 联网模式
+                response = await ApiService.webSearch(question, signal);
+            } else if (isRAGMode) {
+                // RAG模式
                 response = await ApiService.query(question, selectedIndexes, similarityTopK, signal);
             } else {
-                // 如果是聊天模式，获取历史上下文
+                // 聊天模式
                 const context = StorageManager.formatHistoryContext();
                 response = await ApiService.chat(question, context, signal);
             }
@@ -848,10 +868,14 @@ const UnifiedQueryProcessor = {
         const leftSpan = document.querySelector('.mode-toggle span:first-child');
         const rightSpan = document.querySelector('.mode-toggle span:last-child');
         const slider = document.querySelector('.slider');
+        const isWebMode = document.getElementById('webModeToggle').checked;
+        
+        // 更新索引区域的可见性
+        this.updateIndexSectionVisibility(isRAGMode && !isWebMode);
         
         if (isRAGMode) {
             // RAG模式下显示similarityTopK输入框
-            similarityTopK.style.display = 'inline-block';
+            similarityTopK.style.display = isWebMode ? 'none' : 'inline-block';
             // 确保按钮颜色正确 - RAG模式时滑块应该在右侧，颜色为蓝色
             slider.style.backgroundColor = '#007bff';
             leftSpan.style.color = '#666';
@@ -867,6 +891,45 @@ const UnifiedQueryProcessor = {
             rightSpan.style.color = '#666';
             leftSpan.style.fontWeight = 'bold';
             rightSpan.style.fontWeight = 'normal';
+        }
+    },
+    
+    // 切换联网模式
+    toggleWebMode(isWebMode) {
+        const webModeSlider = document.querySelector('.web-mode-toggle .slider');
+        const webModeLeftSpan = document.querySelector('.web-mode-toggle span:first-child');
+        const webModeRightSpan = document.querySelector('.web-mode-toggle span:last-child');
+        const isRAGMode = document.getElementById('modeToggle').checked;
+        
+        // 更新索引区域的可见性
+        this.updateIndexSectionVisibility(isRAGMode && !isWebMode);
+        
+        // 更新similarityTopK的可见性
+        const similarityTopK = document.getElementById('similarityTopK');
+        similarityTopK.style.display = (isRAGMode && !isWebMode) ? 'inline-block' : 'none';
+        
+        if (isWebMode) {
+            // 联网模式
+            webModeSlider.style.backgroundColor = '#007bff';
+            webModeLeftSpan.style.color = '#666';
+            webModeRightSpan.style.color = '#007bff';
+            webModeRightSpan.style.fontWeight = 'bold';
+            webModeLeftSpan.style.fontWeight = 'normal';
+        } else {
+            // 本地知识模式
+            webModeSlider.style.backgroundColor = '#ccc';
+            webModeLeftSpan.style.color = '#007bff';
+            webModeRightSpan.style.color = '#666';
+            webModeLeftSpan.style.fontWeight = 'bold';
+            webModeRightSpan.style.fontWeight = 'normal';
+        }
+    },
+    
+    // 更新索引部分的可见性
+    updateIndexSectionVisibility(isVisible) {
+        const indexSection = document.querySelector('.index-section');
+        if (indexSection) {
+            indexSection.style.display = isVisible ? 'block' : 'none';
         }
     }
 };
@@ -953,9 +1016,14 @@ const EventHandler = {
             UnifiedQueryProcessor.clearHistory()
         );
         
-        // 模式切换按钮
+        // RAG/聊天模式切换按钮
         document.getElementById('modeToggle').addEventListener('change', function() {
             UnifiedQueryProcessor.toggleMode(this.checked);
+        });
+        
+        // 联网模式切换按钮
+        document.getElementById('webModeToggle').addEventListener('change', function() {
+            UnifiedQueryProcessor.toggleWebMode(this.checked);
         });
     },
     
@@ -989,4 +1057,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const modeToggle = document.getElementById('modeToggle');
     modeToggle.checked = true;
     UnifiedQueryProcessor.toggleMode(true);
+    
+    // 设置默认为本地知识模式
+    const webModeToggle = document.getElementById('webModeToggle');
+    webModeToggle.checked = false;
+    UnifiedQueryProcessor.toggleWebMode(false);
 });

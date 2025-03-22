@@ -2,6 +2,15 @@ import os, time
 import string
 from pathlib import Path
 
+def utils_remove_punctuation(input_str: str) -> str:
+    """剔除字符串中的所有标点符号（包括中文和英文）"""
+    # 定义中文标点符号集合
+    chinese_punctuation = '，。`！？；：（）《》【】“”‘’、·…—'
+    # 合并英文和中文标点符号
+    all_punctuation = string.punctuation + chinese_punctuation
+    # 创建翻译表并删除所有标点符号
+    translator = str.maketrans('', '', all_punctuation)
+    return input_str.translate(translator)
 
 def get_chat_file_name(input_str: str) -> str:
     """处理字符串：
@@ -16,14 +25,7 @@ def get_chat_file_name(input_str: str) -> str:
         str: 处理后的字符串
     """
     
-    # 1. 剔除标点符号（包括中文和英文）
-    # 定义中文标点符号集合
-    chinese_punctuation = '，。！？；：（）《》【】“”‘’、·…—'
-    # 合并英文和中文标点符号
-    all_punctuation = string.punctuation + chinese_punctuation
-    # 创建翻译表并删除所有标点符号
-    translator = str.maketrans('', '', all_punctuation)
-    cleaned_str = input_str.translate(translator)
+    cleaned_str = utils_remove_punctuation(input_str)
     
     # 2. 截取前6个单词/字符
     # 对于英文：按空格分割取前6个单词
