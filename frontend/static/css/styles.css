@@ -463,23 +463,23 @@ button:hover {
     display: flex;
     align-items: center;
     margin-left: auto; /* 将mode-toggle推到右侧 */
-    min-width: 230px; /* 确保有足够的空间显示文字和按钮 */
+    min-width: 200px; /* 减小总宽度 */
     justify-content: flex-end; /* 确保元素靠右对齐 */
 }
 
 .mode-toggle span:first-child {
-    margin-right: 5px;
+    margin-right: 1px; /* 减小右边距 */
     color: #666;
     transition: color 0.3s;
-    min-width: 70px; /* 确保文字有足够宽度 */
+    min-width: 65px; /* 调整文字宽度 */
     text-align: right; /* 文字右对齐 */
 }
 
 .mode-toggle span:last-child {
-    margin-left: 5px;
+    margin-left: 5px; /* 减小左边距 */
     color: #666;
     transition: color 0.3s;
-    min-width: 70px; /* 确保文字有足够宽度 */
+    min-width: 65px; /* 调整文字宽度 */
     text-align: left; /* 文字左对齐 */
 }
 
@@ -487,21 +487,23 @@ button:hover {
 input:checked ~ span:last-child {
     color: #007bff;
     font-weight: bold;
+    font-size: 15px; /* 增加字体大小 */
 }
 
 /* 当未选中时（聊天模式），左侧文本高亮 */
 input:not(:checked) ~ span:first-child {
     color: #007bff;
     font-weight: bold;
+    font-size: 15px; /* 增加字体大小 */
 }
 
 /* 开关样式 */
 .switch {
     position: relative;
     display: inline-block;
-    width: 60px; /* 调整为更合适的宽度 */
+    width: 80px; /* 减小宽度 */
     height: 24px;
-    margin: 0 10px; /* 增加左右外边距，为文字留出更多空间 */
+    margin: 0 0px; /* 减小左右外边距 */
 }
 
 .switch input {
@@ -543,7 +545,7 @@ input:focus + .slider {
 }
 
 input:checked + .slider:before {
-    transform: translateX(36px); /* 调整滑块移动距离与开关宽度匹配 */
+    transform: translateX(50px); /* 调整滑块移动距离与开关宽度匹配 */
 }
 
 /* 圆形滑块 */
@@ -558,11 +560,12 @@ input:checked + .slider:before {
 /* 调整控制容器布局 */
 .controls-container {
     display: flex;
-    gap: 10px;
+    gap: 15px; /* 增加各元素之间的间距 */
     flex-wrap: wrap;
     align-items: center;
     margin-bottom: 10px;
     width: 100%; /* 确保容器占据整行 */
+    padding: 5px 0; /* 增加上下内边距 */
 }
 
 /* 调整统一输入框样式 */
@@ -575,4 +578,15 @@ input:checked + .slider:before {
     box-sizing: border-box;
     font-size: 14px;
     resize: none; /* 禁止用户调整大小 */
+}
+
+.mode-toggle span {
+    transition: all 0.3s ease; /* 平滑过渡效果 */
+}
+
+/* 模式文字基础样式 */
+.mode-toggle span:first-child,
+.mode-toggle span:last-child {
+    padding: 3px 6px; /* 增加内边距 */
+    border-radius: 4px; /* 添加圆角 */
 }
