@@ -479,7 +479,7 @@ const StreamProcessor = {
 // 本地存储模块 - 处理聊天历史
 const StorageManager = {
     CHAT_HISTORY_KEY: 'chat_history',
-    MAX_HISTORY_LENGTH: 10,
+    MAX_HISTORY_LENGTH: 15,
     
     // 获取聊天历史
     getChatHistory() {
@@ -514,42 +514,26 @@ const StorageManager = {
 
 // 请求控制器模块 - 管理请求的中止控制器
 const RequestController = {
-    queryAbortController: null,
-    chatAbortController: null,
+    unifiedAbortController: null,
     
-    // 创建新的查询控制器
-    createQueryController() {
-        if (this.queryAbortController) {
-            this.abortQuery();
+    // 创建新的统一控制器
+    createUnifiedController() {
+        if (this.unifiedAbortController) {
+            this.abortUnifiedQuery();
         }
-        this.queryAbortController = new AbortController();
-        return this.queryAbortController.signal;
+        this.unifiedAbortController = new AbortController();
+        return this.unifiedAbortController.signal;
     },
     
-    // 中止查询
-    abortQuery() {
-        if (this.queryAbortController) {
-            this.queryAbortController.abort();
-            this.queryAbortController = null;
+    // 中止统一查询
+    abortUnifiedQuery() {
+        if (this.unifiedAbortController) {
+            this.unifiedAbortController.abort();
+            this.unifiedAbortController = null;
         }
     },
     
-    // 创建新的聊天控制器
-    createChatController() {
-        if (this.chatAbortController) {
-            this.abortChat();
-        }
-        this.chatAbortController = new AbortController();
-        return this.chatAbortController.signal;
-    },
-    
-    // 中止聊天
-    abortChat() {
-        if (this.chatAbortController) {
-            this.chatAbortController.abort();
-            this.chatAbortController = null;
-        }
-    }
+    // ... keep existing methods ...
 };
 
 // 索引管理模块 - 处理索引相关操作
@@ -707,8 +691,8 @@ const IndexManager = {
     }
 };
 
-// 查询处理模块 - 处理查询相关操作
-const QueryProcessor = {
+// 统一查询处理模块 - 处理所有查询相关操作
+const UnifiedQueryProcessor = {
     // 处理查询提交
     async handleQuerySubmit(event) {
         event.preventDefault();
@@ -716,20 +700,28 @@ const QueryProcessor = {
         // 确保之前的请求被清理
         await this.ensureCleanup();
         
-        const button = document.getElementById('queryButton');
-        const terminateButton = document.getElementById('queryTerminateButton');
+        const button = document.getElementById('unifiedQueryButton');
+        const terminateButton = document.getElementById('unifiedTerminateButton');
         UiUtils.toggleButtonState(button, true);
         UiUtils.toggleTerminateButtonState(terminateButton, true);
         
-        const question = document.getElementById('question').value;
-        const similarityTopK = parseInt(document.getElementById('similarityTopK').value) || 10;
-        const selectedIndexes = UiUtils.getSelectedIndexes();
+        const question = document.getElementById('unifiedQuestion').value;
+        // 获取当前模式（RAG查询或聊天）
+        const isRAGMode = document.getElementById('modeToggle').checked;
         
-        if (selectedIndexes.length === 0) {
-            UiUtils.showAlert('请至少选择一个索引！');
-            UiUtils.toggleButtonState(button, false);
-            UiUtils.toggleTerminateButtonState(terminateButton, false);
-            return;
+        // 如果是RAG模式，需要获取索引和similarityTopK
+        let selectedIndexes = [];
+        let similarityTopK = 10;
+        if (isRAGMode) {
+            selectedIndexes = UiUtils.getSelectedIndexes();
+            similarityTopK = parseInt(document.getElementById('similarityTopK').value) || 10;
+            
+            if (selectedIndexes.length === 0) {
+                UiUtils.showAlert('请至少选择一个索引！');
+                UiUtils.toggleButtonState(button, false);
+                UiUtils.toggleTerminateButtonState(terminateButton, false);
+                return;
+            }
         }
         
         // 重置输出区域
@@ -737,126 +729,20 @@ const QueryProcessor = {
         StreamProcessor.showLoading();
         
         // 创建新的 AbortController
-        const signal = RequestController.createQueryController();
+        const signal = RequestController.createUnifiedController();
         
         let reader = null;
+        let response;
         
         try {
-            const response = await ApiService.query(question, selectedIndexes, similarityTopK, signal);
-            
-            // 清除加载提示
-            StreamProcessor.reset();
-            
-            reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let result = '';
-            
-            // 使用节流函数来限制更新频率
-            const throttledUpdate = UiUtils.throttle((content, question) => {
-                StreamProcessor.updateStreamOutput(content, question);
-            }, 50);
-            
-            // 添加信号监听器，在请求被终止时释放reader
-            signal.addEventListener('abort', async () => {
-                if (reader) {
-                    try {
-                        await reader.cancel();
-                        reader = null;
-                    } catch (e) {
-                        console.error('Error cancelling reader:', e);
-                    }
-                }
-            });
-            
-            while (!signal.aborted) {
-                try {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    
-                    const chunk = decoder.decode(value, { stream: true });
-                    result += chunk;
-                    
-                    throttledUpdate(result, question);
-                } catch (e) {
-                    if (signal.aborted) break;
-                    throw e;
-                }
-            }
-            
-            // 确保最后一次更新显示完整内容
-            if (!signal.aborted) {
-                StreamProcessor.updateStreamOutput(result, question);
-            }
-            
-        } catch (error) {
-            if (error.name === 'AbortError') {
-                StreamProcessor.appendError('请求已终止');
+            // 根据当前模式选择请求类型
+            if (isRAGMode) {
+                response = await ApiService.query(question, selectedIndexes, similarityTopK, signal);
             } else {
-                StreamProcessor.showError(`Error: ${error.message}`);
+                // 如果是聊天模式，获取历史上下文
+                const context = StorageManager.formatHistoryContext();
+                response = await ApiService.chat(question, context, signal);
             }
-        } finally {
-            // 确保reader被释放
-            if (reader) {
-                try {
-                    await reader.cancel();
-                } catch (e) {
-                    console.error('Error cancelling reader in finally block:', e);
-                }
-                reader = null;
-            }
-            
-            UiUtils.toggleButtonState(button, false);
-            UiUtils.toggleTerminateButtonState(terminateButton, false);
-            RequestController.queryAbortController = null;
-        }
-    },
-    
-    // 确保之前的请求被清理
-    async ensureCleanup() {
-        if (RequestController.queryAbortController) {
-            RequestController.abortQuery();
-            // 添加小延迟，确保连接完全关闭
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-    },
-    
-    // 终止查询
-    terminateQuery() {
-        if (RequestController.queryAbortController) {
-            RequestController.abortQuery();
-            document.getElementById('queryTerminateButton').disabled = true;
-        }
-    }
-};
-
-// 聊天处理模块 - 处理聊天相关操作
-const ChatProcessor = {
-    // 处理聊天提交
-    async handleChatSubmit(event) {
-        event.preventDefault();
-        
-        // 确保之前的请求被清理
-        await this.ensureCleanup();
-        
-        const button = document.getElementById('chatButton');
-        const terminateButton = document.getElementById('chatTerminateButton');
-        UiUtils.toggleButtonState(button, true);
-        UiUtils.toggleTerminateButtonState(terminateButton, true);
-        
-        const question = document.getElementById('chatQuestion').value;
-        const context = StorageManager.formatHistoryContext();
-        
-        // 重置输出区域
-        StreamProcessor.reset();
-        StreamProcessor.showLoading();
-        
-        // 创建新的 AbortController
-        const signal = RequestController.createChatController();
-        
-        let reader = null;
-        
-        try {
-            const response = await ApiService.chat(question, context, signal);
             
             // 清除加载提示
             StreamProcessor.reset();
@@ -901,9 +787,11 @@ const ChatProcessor = {
             if (!signal.aborted) {
                 StreamProcessor.updateStreamOutput(result, question);
                 
-                // 保存对话历史
-                StorageManager.saveChatMessage('user', question);
-                StorageManager.saveChatMessage('ai', result);
+                // 如果是聊天模式，保存对话历史
+                if (!isRAGMode) {
+                    StorageManager.saveChatMessage('user', question);
+                    StorageManager.saveChatMessage('ai', result);
+                }
             }
             
         } catch (error) {
@@ -925,24 +813,24 @@ const ChatProcessor = {
             
             UiUtils.toggleButtonState(button, false);
             UiUtils.toggleTerminateButtonState(terminateButton, false);
-            RequestController.chatAbortController = null;
+            RequestController.unifiedAbortController = null;
         }
     },
     
     // 确保之前的请求被清理
     async ensureCleanup() {
-        if (RequestController.chatAbortController) {
-            RequestController.abortChat();
+        if (RequestController.unifiedAbortController) {
+            RequestController.abortUnifiedQuery();
             // 添加小延迟，确保连接完全关闭
             await new Promise(resolve => setTimeout(resolve, 100));
         }
     },
     
-    // 终止聊天
-    terminateChat() {
-        if (RequestController.chatAbortController) {
-            RequestController.abortChat();
-            document.getElementById('chatTerminateButton').disabled = true;
+    // 终止查询
+    terminateQuery() {
+        if (RequestController.unifiedAbortController) {
+            RequestController.abortUnifiedQuery();
+            document.getElementById('unifiedTerminateButton').disabled = true;
         }
     },
     
@@ -951,6 +839,20 @@ const ChatProcessor = {
         StorageManager.clearHistory();
         StreamProcessor.reset();
         UiUtils.showAlert('历史记录已清除');
+    },
+    
+    // 切换 RAG 和聊天模式
+    toggleMode(isRAGMode) {
+        // 根据模式切换UI元素的显示状态
+        const similarityTopK = document.getElementById('similarityTopK');
+        
+        if (isRAGMode) {
+            // RAG模式下显示similarityTopK输入框
+            similarityTopK.style.display = 'inline-block';
+        } else {
+            // 聊天模式下隐藏similarityTopK输入框
+            similarityTopK.style.display = 'none';
+        }
     }
 };
 
@@ -964,11 +866,8 @@ const EventHandler = {
         // 索引过滤相关事件
         this.initIndexFilterEvents();
         
-        // 查询相关事件
-        this.initQueryEvents();
-        
-        // 聊天相关事件
-        this.initChatEvents();
+        // 统一查询相关事件
+        this.initUnifiedQueryEvents();
         
         // 复制结果相关事件
         this.initCopyEvents();
@@ -1022,35 +921,27 @@ const EventHandler = {
         });
     },
     
-    // 初始化查询相关事件
-    initQueryEvents() {
-        // 查询表单提交
-        document.getElementById('queryForm').addEventListener('submit', event => 
-            QueryProcessor.handleQuerySubmit(event)
+    // 初始化统一查询相关事件
+    initUnifiedQueryEvents() {
+        // 统一查询表单提交
+        document.getElementById('unifiedQueryForm').addEventListener('submit', event => 
+            UnifiedQueryProcessor.handleQuerySubmit(event)
         );
         
-        // 查询终止按钮
-        document.getElementById('queryTerminateButton').addEventListener('click', () => 
-            QueryProcessor.terminateQuery()
-        );
-    },
-    
-    // 初始化聊天相关事件
-    initChatEvents() {
-        // 聊天表单提交
-        document.getElementById('chatForm').addEventListener('submit', event => 
-            ChatProcessor.handleChatSubmit(event)
-        );
-        
-        // 聊天终止按钮
-        document.getElementById('chatTerminateButton').addEventListener('click', () => 
-            ChatProcessor.terminateChat()
+        // 统一查询终止按钮
+        document.getElementById('unifiedTerminateButton').addEventListener('click', () => 
+            UnifiedQueryProcessor.terminateQuery()
         );
         
         // 清除历史记录按钮
         document.getElementById('clearHistoryButton').addEventListener('click', () => 
-            ChatProcessor.clearHistory()
+            UnifiedQueryProcessor.clearHistory()
         );
+        
+        // 模式切换按钮
+        document.getElementById('modeToggle').addEventListener('change', function() {
+            UnifiedQueryProcessor.toggleMode(this.checked);
+        });
     },
     
     // 初始化复制结果相关事件
@@ -1077,6 +968,10 @@ document.addEventListener('DOMContentLoaded', function() {
     IndexManager.loadIndexNames();
     
     // 初始化终止按钮状态
-    document.getElementById('queryTerminateButton').disabled = true;
-    document.getElementById('chatTerminateButton').disabled = true;
+    document.getElementById('unifiedTerminateButton').disabled = true;
+    
+    // 设置默认模式为RAG查询模式
+    const modeToggle = document.getElementById('modeToggle');
+    modeToggle.checked = true;
+    UnifiedQueryProcessor.toggleMode(true);
 });

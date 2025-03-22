@@ -189,7 +189,7 @@ def delete_document_collections(index_names):
 
 if __name__ == "__main__":
     input_files = get_all_files_from_directory(
-        "/Users/Daglas/dalong.github/dalong.ITstudy/001大语言模型", 
+        "/Users/Daglas/dalong.github/dalong.selfstudy/大牛文集/阳志平", 
         "md")
-    build_basic_fixed_size_index(input_files, "ITStudyLLM", )
+    build_basic_fixed_size_index(input_files, "Titan_Yangzhiping", )
     # build_basic_fixed_size_index(input_files, "Book2024096The_Worlds_I_See", )
