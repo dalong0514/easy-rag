@@ -14,3 +14,4 @@ trulens-apps-llamaindex==1.4.0
 fastapi==0.115.8
 uvicorn==0.34.0
 Flask==3.1.0
+brave-search==0.1.8

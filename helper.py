@@ -19,6 +19,7 @@ def get_api_key(service="default"):
             - "deepseek": DEEPSEEK_API_KEY
             - "fireworks": FIREWORKS_API_KEY
             - "weaviate": WCD_API_KEY
+            - "brave": BRAVE_API_KEY
     
     Returns:
         str: API key for the specified service
@@ -34,7 +35,8 @@ def get_api_key(service="default"):
         "mistral": "MISTRAL_API_KEY",
         "fireworks": "FIREWORKS_API_KEY",
         "silicon": "SILICON_API_KEY",
-        "weaviate": "WCD_API_KEY"
+        "weaviate": "WCD_API_KEY",
+        "brave": "BRAVE_API_KEY"
     }
     return os.getenv(key_mapping.get(service, "API_KEY"))
 
