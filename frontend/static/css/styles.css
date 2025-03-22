@@ -91,10 +91,13 @@ body {
 #similarityTopK {
     width: 100px;
     height: 30px;
-    padding: 10px;
+    padding: 5px 10px;
     box-sizing: border-box;
     font-size: 14px;
-    margin-bottom: 10px;
+    margin-bottom: 0; /* 移除底部margin */
+    vertical-align: middle; /* 确保与按钮垂直对齐 */
+    border: 1px solid #ddd;
+    border-radius: 5px;
 }
 
 /* 调整按钮高度 */
@@ -460,18 +463,45 @@ button:hover {
     display: flex;
     align-items: center;
     margin-left: auto; /* 将mode-toggle推到右侧 */
+    min-width: 230px; /* 确保有足够的空间显示文字和按钮 */
+    justify-content: flex-end; /* 确保元素靠右对齐 */
 }
 
-.mode-toggle span {
-    margin: 0 10px;
+.mode-toggle span:first-child {
+    margin-right: 5px;
+    color: #666;
+    transition: color 0.3s;
+    min-width: 70px; /* 确保文字有足够宽度 */
+    text-align: right; /* 文字右对齐 */
+}
+
+.mode-toggle span:last-child {
+    margin-left: 5px;
+    color: #666;
+    transition: color 0.3s;
+    min-width: 70px; /* 确保文字有足够宽度 */
+    text-align: left; /* 文字左对齐 */
+}
+
+/* 当选中时（RAG模式），右侧文本高亮 */
+input:checked ~ span:last-child {
+    color: #007bff;
+    font-weight: bold;
+}
+
+/* 当未选中时（聊天模式），左侧文本高亮 */
+input:not(:checked) ~ span:first-child {
+    color: #007bff;
+    font-weight: bold;
 }
 
 /* 开关样式 */
 .switch {
     position: relative;
     display: inline-block;
-    width: 80px; /* 增加宽度为原来的2倍 */
+    width: 60px; /* 调整为更合适的宽度 */
     height: 24px;
+    margin: 0 10px; /* 增加左右外边距，为文字留出更多空间 */
 }
 
 .switch input {
@@ -487,7 +517,7 @@ button:hover {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
+    background-color: #ccc; /* 默认灰色（聊天模式） */
     transition: .4s;
 }
 
@@ -500,10 +530,12 @@ button:hover {
     bottom: 3px;
     background-color: white;
     transition: .4s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3); /* 添加阴影 */
 }
 
+/* 选中状态（RAG模式）样式 */
 input:checked + .slider {
-    background-color: #007bff;
+    background-color: #007bff; /* 蓝色（RAG模式） */
 }
 
 input:focus + .slider {
@@ -511,7 +543,7 @@ input:focus + .slider {
 }
 
 input:checked + .slider:before {
-    transform: translateX(76px); /* 调整滑块移动距离 */
+    transform: translateX(36px); /* 调整滑块移动距离与开关宽度匹配 */
 }
 
 /* 圆形滑块 */
@@ -523,7 +555,7 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 
-/* 控制区域容器 */
+/* 调整控制容器布局 */
 .controls-container {
     display: flex;
     gap: 10px;

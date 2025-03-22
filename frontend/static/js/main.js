@@ -845,13 +845,28 @@ const UnifiedQueryProcessor = {
     toggleMode(isRAGMode) {
         // 根据模式切换UI元素的显示状态
         const similarityTopK = document.getElementById('similarityTopK');
+        const leftSpan = document.querySelector('.mode-toggle span:first-child');
+        const rightSpan = document.querySelector('.mode-toggle span:last-child');
+        const slider = document.querySelector('.slider');
         
         if (isRAGMode) {
             // RAG模式下显示similarityTopK输入框
             similarityTopK.style.display = 'inline-block';
+            // 确保按钮颜色正确 - RAG模式时滑块应该在右侧，颜色为蓝色
+            slider.style.backgroundColor = '#007bff';
+            leftSpan.style.color = '#666';
+            rightSpan.style.color = '#007bff';
+            rightSpan.style.fontWeight = 'bold';
+            leftSpan.style.fontWeight = 'normal';
         } else {
             // 聊天模式下隐藏similarityTopK输入框
             similarityTopK.style.display = 'none';
+            // 聊天模式时滑块应该在左侧，颜色为灰色
+            slider.style.backgroundColor = '#ccc';
+            leftSpan.style.color = '#007bff';
+            rightSpan.style.color = '#666';
+            leftSpan.style.fontWeight = 'bold';
+            rightSpan.style.fontWeight = 'normal';
         }
     }
 };
