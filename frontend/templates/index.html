@@ -28,7 +28,24 @@
             <!-- 第二列：输入部分 -->
             <div class="input-section">
                 <div class="section">
-                    <h2>RAG 查询文档</h2>
+                    <h2>RAG 查询文档
+                        <div class="mode-toggle" style="display: inline-block; margin-left: 15px;">
+                            <span>聊天模式</span>
+                            <label class="switch">
+                                <input type="checkbox" id="modeToggle" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>RAG 模式</span>
+                        </div>
+                        <div class="mode-toggle web-mode-toggle" style="display: inline-block; margin-left: 15px;">
+                            <span>本地知识</span>
+                            <label class="switch">
+                                <input type="checkbox" id="webModeToggle">
+                                <span class="slider round"></span>
+                            </label>
+                            <span>联网模式</span>
+                        </div>
+                    </h2>
                     <form id="unifiedQueryForm" style="display: flex; flex-direction: column; flex-grow: 1;">
                         <textarea id="unifiedQuestion" placeholder="输入你的问题..."></textarea>
                         <div class="controls-container">
@@ -36,23 +53,7 @@
                             <button type="button" id="unifiedTerminateButton" class="terminate-btn">终止</button>
                             <button type="button" id="clearHistoryButton" class="btn">清除历史记录</button>
                             <span>检索数量</span>
-                            <input type="number" id="similarityTopK" placeholder="输入similarity_top_k（默认10）" value="10">
-                            <div class="mode-toggle">
-                                <span>聊天模式</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="modeToggle" checked>
-                                    <span class="slider round"></span>
-                                </label>
-                                <span>RAG 模式</span>
-                            </div>
-                            <div class="mode-toggle web-mode-toggle">
-                                <span>本地知识</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="webModeToggle">
-                                    <span class="slider round"></span>
-                                </label>
-                                <span>联网模式</span>
-                            </div>
+                            <input type="number" id="similarityTopK" placeholder="输入similarity_top_k（默认12）" value="12">
                         </div>
                     </form>
                     <div id="queryResult"></div>
