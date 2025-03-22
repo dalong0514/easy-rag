@@ -550,6 +550,13 @@ input:checked + .slider:before {
     padding: 5px 0; /* 增加上下内边距 */
 }
 
+/* 控制容器内的说明文字 */
+.controls-container span {
+    font-size: 14px;
+    color: #333;
+    margin-right: 5px;
+}
+
 /* 调整统一输入框样式 */
 #unifiedQuestion {
     width: 100%;

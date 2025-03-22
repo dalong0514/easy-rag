@@ -873,9 +873,10 @@ const UnifiedQueryProcessor = {
         // 更新索引区域的可见性
         this.updateIndexSectionVisibility(isRAGMode && !isWebMode);
         
+        // 确保similarityTopK输入框始终显示，无论什么模式
+        similarityTopK.style.display = 'inline-block';
+        
         if (isRAGMode) {
-            // RAG模式下显示similarityTopK输入框
-            similarityTopK.style.display = isWebMode ? 'none' : 'inline-block';
             // 确保按钮颜色正确 - RAG模式时滑块应该在右侧，颜色为蓝色
             slider.style.backgroundColor = '#007bff';
             leftSpan.style.color = '#666';
@@ -883,8 +884,6 @@ const UnifiedQueryProcessor = {
             rightSpan.style.fontWeight = 'bold';
             leftSpan.style.fontWeight = 'normal';
         } else {
-            // 聊天模式下隐藏similarityTopK输入框
-            similarityTopK.style.display = 'none';
             // 聊天模式时滑块应该在左侧，颜色为灰色
             slider.style.backgroundColor = '#ccc';
             leftSpan.style.color = '#007bff';
@@ -904,9 +903,10 @@ const UnifiedQueryProcessor = {
         // 更新索引区域的可见性
         this.updateIndexSectionVisibility(isRAGMode && !isWebMode);
         
-        // 更新similarityTopK的可见性
+        // 更新similarityTopK的可见性 - 移除隐藏代码，让其始终显示
         const similarityTopK = document.getElementById('similarityTopK');
-        similarityTopK.style.display = (isRAGMode && !isWebMode) ? 'inline-block' : 'none';
+        // similarityTopK.style.display = isWebMode ? 'none' : 'inline-block';
+        similarityTopK.style.display = 'inline-block';
         
         if (isWebMode) {
             // 联网模式
