@@ -571,6 +571,7 @@ input:checked + .slider:before {
 
 .mode-toggle span {
     transition: all 0.3s ease; /* 平滑过渡效果 */
+    font-size: 12px; /* 调小字体大小 */
 }
 
 /* 模式文字基础样式 */
