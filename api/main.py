@@ -45,9 +45,11 @@ search_answer_zh_template = \
     - 对于客观类的问答，如果问题的答案非常简短，可以适当补充一到两句相关信息，以丰富内容。
     - 你需要根据用户要求和回答内容选择合适、美观的回答格式，确保可读性强。
     - 你的回答应该综合多个相关搜索结果来回答，不能重复引用一个搜索结果。
-    - 除非用户要求，否则你回答的语言需要和用户提问的语言保持一致。
+    - 你回答的语言使用简体中文。
     \# 用户消息为：
     {question}'''
+
+# - 除非用户要求，否则你回答的语言需要和用户提问的语言保持一致。
 
 model = ChatOpenAI(
     base_url=base_url,
@@ -311,6 +313,8 @@ async def web_search_api(request: WebSearchRequest):
                 }
                 params = {
                     "q": clean_question,
+                    "search_lang": "en",
+                    "country": "US",
                     "count": request.similarity_top_k
                 }
                 
