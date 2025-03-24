@@ -12,6 +12,22 @@ from src.utils import get_all_files_from_directory
 Settings.embed_model = resolve_embed_model("local:/Users/Daglas/dalong.modelsets/bge-m3")
 
 def build_basic_fixed_size_index(input_files, index_name, chunk_size=1024, chunk_overlap=200):
+    """构建基础固定大小的索引
+    
+    使用简单的文档分割策略创建向量索引，将文档分割成固定大小的块。
+    
+    Args:
+        input_files (list): 输入文件路径列表
+        index_name (str): 索引名称，将作为Weaviate集合名
+        chunk_size (int, optional): 文档分块大小，默认为1024个字符
+        chunk_overlap (int, optional): 相邻块之间的重叠字符数，默认为200
+        
+    Returns:
+        None: 函数无返回值，但会在Weaviate中创建指定名称的集合和索引
+        
+    Raises:
+        Exception: 在处理过程中可能出现的各种异常
+    """
     try:
         # 连接本地 Weaviate
         client = weaviate.connect_to_local()
@@ -56,6 +72,21 @@ def build_basic_fixed_size_index(input_files, index_name, chunk_size=1024, chunk
 
 # for auto-merging retriever
 def build_automerging_index(input_files, index_name, chunk_sizes=None):
+    """构建自动合并索引
+    
+    使用层次化节点解析器创建向量索引，支持多尺度文档分割，适用于自动合并检索。
+    
+    Args:
+        input_files (list): 输入文件路径列表
+        index_name (str): 索引名称，将作为Weaviate集合名
+        chunk_sizes (list, optional): 文档分块大小列表，默认为[2048, 512, 128]
+        
+    Returns:
+        None: 函数无返回值，但会在Weaviate中创建指定名称的集合和索引
+        
+    Raises:
+        Exception: 在处理过程中可能出现的各种异常
+    """
     try:
         # 连接本地 Weaviate
         client = weaviate.connect_to_local()
@@ -108,6 +139,20 @@ def build_automerging_index(input_files, index_name, chunk_sizes=None):
 
 # the sentence window retrieval
 def build_sentence_window_index(input_files, index_name):
+    """构建句子窗口索引
+    
+    使用句子窗口节点解析器创建向量索引，对每个句子保留上下文窗口，适用于上下文感知检索。
+    
+    Args:
+        input_files (list): 输入文件路径列表
+        index_name (str): 索引名称，将作为Weaviate集合名
+        
+    Returns:
+        None: 函数无返回值，但会在Weaviate中创建指定名称的集合和索引
+        
+    Raises:
+        Exception: 在处理过程中可能出现的各种异常
+    """
     try:
         # 连接本地 Weaviate
         client = weaviate.connect_to_local()
@@ -161,8 +206,15 @@ def build_sentence_window_index(input_files, index_name):
 
 def delete_document_collections(index_names):
     """批量删除 Weaviate 中的集合
+    
     Args:
-        index_names: 要删除的索引名称列表
+        index_names (str|list): 要删除的索引名称，可以是单个字符串或字符串列表
+        
+    Returns:
+        None: 函数无返回值，但会删除Weaviate中的指定集合
+        
+    Raises:
+        Exception: 在处理过程中可能出现的各种异常
     """
     # 连接本地 Weaviate
     client = weaviate.connect_to_local()
@@ -188,8 +240,8 @@ def delete_document_collections(index_names):
         print("Weaviate connection closed.")
 
 if __name__ == "__main__":
-    input_files = get_all_files_from_directory(
-        "/Users/Daglas/dalong.github/dalong.selfstudy/大牛文集/阳志平", 
-        "md")
-    build_basic_fixed_size_index(input_files, "Titan_Yangzhiping", )
-    # build_basic_fixed_size_index(input_files, "Book2024096The_Worlds_I_See", )
+    # input_files = get_all_files_from_directory(
+    #     "/Users/Daglas/dalong.github/dalong.selfstudy/大牛文集/阳志平", 
+    #     "md")
+    # build_basic_fixed_size_index(input_files, "Titan_Yangzhiping", )
+    build_basic_fixed_size_index(["/Users/Daglas/dalong.github/dalong.selfstudy/大牛文集/阳志平/2024096The_Worlds_I_See.md"], "Book2024096The_Worlds_I_See", )

@@ -9,6 +9,16 @@ from llama_index.vector_stores.weaviate import WeaviateVectorStore
 reranker_model_name = "/Users/Daglas/dalong.modelsets/bge-reranker-v2-m3"
 
 def get_all_index_names():
+    """获取Weaviate中所有可用的索引名称
+    
+    连接到本地Weaviate实例，检索并返回所有集合名称。
+    
+    Returns:
+        list: 按字母顺序排序的索引名称列表
+        
+    Raises:
+        Exception: 连接或检索过程中可能出现的异常
+    """
     try:
         client = weaviate.connect_to_local()
         # 直接获取集合名称列表（字符串列表）
@@ -27,6 +37,21 @@ def get_all_index_names():
             client.close()
 
 def basic_query_from_documents(question, index_names, similarity_top_k):
+    """从多个索引中检索相关文档片段
+    
+    根据问题从多个Weaviate索引中检索相关内容，通过组合检索结果并按相关性排序。
+    
+    Args:
+        question (str): 用户查询问题
+        index_names (str|list): 要查询的索引名称，可以是单个字符串或字符串列表
+        similarity_top_k (int): 检索的最大结果数量
+        
+    Returns:
+        list: 检索到的源节点列表，按相关性分数排序
+        
+    Raises:
+        Exception: 检索过程中可能出现的异常
+    """
     try:
         client = weaviate.connect_to_local()
         
@@ -48,12 +73,35 @@ def basic_query_from_documents(question, index_names, similarity_top_k):
         # 自定义复合检索器
         # 修改后的 MultiIndexRetriever 实现
         class MultiIndexRetriever(BaseRetriever):
+            """复合检索器，用于从多个索引中检索并合并结果
+            
+            继承自BaseRetriever，组合多个检索器的结果并按相关性排序。
+            
+            Attributes:
+                retrievers (list): 检索器列表
+                similarity_top_k (int): 要返回的最大结果数
+            """
             def __init__(self, retrievers, similarity_top_k):
+                """初始化复合检索器
+                
+                Args:
+                    retrievers (list): 检索器列表
+                    similarity_top_k (int): 要返回的最大结果数
+                """
                 super().__init__()
                 self.retrievers = retrievers
                 self.similarity_top_k = similarity_top_k  # 存储全局 top_k 值
 
             def _retrieve(self, query, **kwargs):
+                """实际执行检索的内部方法
+                
+                Args:
+                    query (str): 查询字符串
+                    **kwargs: 额外的关键字参数
+                    
+                Returns:
+                    list: 合并后并排序的节点列表，限制为top_k个
+                """
                 all_nodes = []
                 # 收集所有检索器的节点
                 for retriever in self.retrievers:
@@ -91,6 +139,21 @@ def basic_query_from_documents(question, index_names, similarity_top_k):
             print("\nWeaviate connection closed.")
 
 def basic_query_from_documents_for_one_collection(question, index_name, similarity_top_k):
+    """从单个索引中检索相关文档片段
+    
+    根据问题从指定的单个Weaviate索引中检索相关内容。
+    
+    Args:
+        question (str): 用户查询问题
+        index_name (str): 要查询的索引名称
+        similarity_top_k (int): 检索的最大结果数量
+        
+    Returns:
+        list: 检索到的源节点列表
+        
+    Raises:
+        Exception: 检索过程中可能出现的异常
+    """
     try:
         # 连接本地 Weaviate
         client = weaviate.connect_to_local()
@@ -122,6 +185,22 @@ def sentence_window_query_from_documents(
     similarity_top_k=12,
     rerank_top_n=4,
 ):
+    """使用句子窗口策略从索引中检索文档片段
+    
+    利用句子窗口技术从指定索引检索相关内容，并使用重排序器提高结果相关性。
+    
+    Args:
+        question (str): 用户查询问题
+        index_name (str): 要查询的索引名称
+        similarity_top_k (int, optional): 初始检索的最大结果数量，默认为12
+        rerank_top_n (int, optional): 重排序后保留的结果数量，默认为4
+        
+    Returns:
+        list: 检索并重排序后的源节点列表
+        
+    Raises:
+        Exception: 检索过程中可能出现的异常
+    """
     try:
         # 连接本地 Weaviate
         client = weaviate.connect_to_local()
@@ -155,13 +234,28 @@ def sentence_window_query_from_documents(
             client.close()  # Ensure client is always closed, Free up resources
             print("\nWeaviate connection closed.")
 
-# for auto-merging retriever
 def automerging_query_from_documents(
     question,
     index_name,
     similarity_top_k=12,
     rerank_top_n=2,
 ):
+    """使用自动合并检索从索引中检索文档片段
+    
+    利用自动合并检索器从分层索引中智能检索内容，并使用重排序器提高结果相关性。
+    
+    Args:
+        question (str): 用户查询问题
+        index_name (str): 要查询的索引名称
+        similarity_top_k (int, optional): 初始检索的最大结果数量，默认为12
+        rerank_top_n (int, optional): 重排序后保留的结果数量，默认为2
+        
+    Returns:
+        list: 经过自动合并检索和重排序后的源节点列表
+        
+    Raises:
+        Exception: 检索过程中可能出现的异常
+    """
     try:
         # 连接本地 Weaviate
         client = weaviate.connect_to_local()
@@ -209,5 +303,4 @@ def automerging_query_from_documents(
 
 
 if __name__ == "__main__":
-    # print("中国唐朝最著名的四位诗人")
     get_all_index_names()
