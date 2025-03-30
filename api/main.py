@@ -315,7 +315,8 @@ async def web_search_api(request: WebSearchRequest):
                     "q": clean_question,
                     "search_lang": "en",
                     "country": "US",
-                    "count": request.similarity_top_k
+                    "count": 20
+                    # "count": request.similarity_top_k
                 }
                 
                 search_response = requests.get(brave_api_url, headers=headers, params=params)

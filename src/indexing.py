@@ -240,8 +240,8 @@ def delete_document_collections(index_names):
         print("Weaviate connection closed.")
 
 if __name__ == "__main__":
-    # input_files = get_all_files_from_directory(
-    #     "/Users/Daglas/dalong.github/dalong.selfstudy/大牛文集/阳志平", 
-    #     "md")
-    # build_basic_fixed_size_index(input_files, "Titan_Yangzhiping", )
-    build_basic_fixed_size_index(["/Users/Daglas/dalong.github/dalong.selfstudy/大牛文集/阳志平/2024096The_Worlds_I_See.md"], "Book2024096The_Worlds_I_See", )
+    input_files = get_all_files_from_directory(
+        "/Users/Daglas/dalong.github/dalong.readnotes/20240101复制书籍/2024097深度学习入门", 
+        "md")
+    build_basic_fixed_size_index(input_files, "Book2024097Deep_Learning_from_Scratch", )
+    # build_basic_fixed_size_index(["/Users/Daglas/dalong.processdesign/03规范汇总/GBT20801-2020压力管道规范.md"], "Standard_GBT20801_2020", )
