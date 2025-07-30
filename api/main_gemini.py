@@ -1,4 +1,6 @@
 import os, sys
+from google import genai
+from google.genai import types
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -6,12 +8,10 @@ from pydantic import BaseModel
 from src.indexing import build_basic_fixed_size_index, build_automerging_index, build_sentence_window_index, delete_document_collections
 from src.retrieval import basic_query_from_documents, get_all_index_names
 from src.utils import get_chat_file_name, get_all_files_from_directory, print_data_sources, get_timestamp, utils_remove_punctuation
-from typing import Union, List, Optional
+from typing import Union, List, Optional, AsyncGenerator
 # 将项目根目录添加到 sys.path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from helper import get_api_key, get_base_url, get_chat_record_dir
+from helper import get_api_key, get_chat_record_dir
 import requests
 import json
 
@@ -26,10 +26,10 @@ app.add_middleware(
     allow_headers=["*"],  # 允许所有头
 )
 
-api_key = get_api_key("zhipu")
+api_key = get_api_key("google")
+client = genai.Client(api_key=api_key)
+model_name = "gemini-2.5-pro"
 brave_api_key = get_api_key("brave")
-base_url= get_base_url("zhipu")
-model_name = "glm-4.5"
 chat_record_dir= get_chat_record_dir()
 
 # **每次回复必须以 \"\<think\>\n\" 开始。**
@@ -51,13 +51,46 @@ search_answer_zh_template = \
 
 # - 除非用户要求，否则你回答的语言需要和用户提问的语言保持一致。
 
-model = ChatOpenAI(
-    base_url=base_url,
-    api_key=api_key,
-    model_name=model_name,
-    temperature=0.6,
-    streaming=True
-)
+async def gemini_stream_response(prompt: str, system_instruction: str = None) -> AsyncGenerator[str, None]:
+    """
+    使用 Google Gemini 模型生成流式响应
+    
+    Args:
+        prompt: 用户提示词
+        system_instruction: 系统指令
+        
+    Yields:
+        str: 模型响应的文本片段
+    """
+    try:
+        # 构建消息内容
+        contents = [types.Content(parts=[types.Part(text=prompt)])]
+        
+        # 配置生成参数
+        config = types.GenerateContentConfig(
+            temperature=0.6,
+            max_output_tokens=65536,
+        )
+        
+        # 如果有系统指令，添加到配置中
+        if system_instruction:
+            config.system_instruction = system_instruction
+            # config.thinking_config = types.ThinkingConfig(thinking_budget=10240)
+        
+        # 使用流式生成
+        response_stream = client.models.generate_content_stream(
+            model=model_name,
+            contents=contents,
+            config=config
+        )
+        
+        # 逐块返回响应
+        for chunk in response_stream:
+            if chunk.text:
+                yield chunk.text
+                
+    except Exception as e:
+        yield f"生成响应时出错: {str(e)}"
 
 class QueryRequest(BaseModel):
     question: str
@@ -122,16 +155,17 @@ async def query_from_documents_api(request: QueryRequest):
 
             # 流式返回 LLM 的响应
             full_response = "<think>\n正在检索相关文档...\n</think>\n<think>\n文档检索完成，正在生成回答...\n</think>\n"
-            prompt_template = ChatPromptTemplate([
-                ("user", search_answer_zh_template)
-            ])
             
-            prompt = prompt_template.invoke({"context": context, "question": request.question})
-            response = model.stream(prompt)
+            # 格式化提示词
+            formatted_prompt = search_answer_zh_template.format(
+                context=context,
+                question=request.question
+            )
             
-            for chunk in response:
-                yield chunk.content
-                full_response += chunk.content
+            # 使用 Gemini 模型生成流式响应
+            async for chunk in gemini_stream_response(formatted_prompt):
+                yield chunk
+                full_response += chunk
             
             # 添加引用信息到响应末尾
             citations = "<references>\n"
@@ -183,18 +217,14 @@ async def chat_with_llm_api(request: ChatRequest):
             yield "<think>\n正在处理您的请求...\n</think>\n"
             
             full_response = "<think>\n正在处理您的请求...\n</think>\n"
-            prompt_template = ChatPromptTemplate([
-                ("user", "**response with \"\<think\>\n\" at the beginning of every output**\nContext: {context}\nQuestion: {question}")
-            ])
-            prompt = prompt_template.invoke({
-                "context": request.context or "",
-                "question": request.question
-            })
-            response = model.stream(prompt)
             
-            for chunk in response:
-                yield chunk.content
-                full_response += chunk.content
+            # 格式化提示词
+            formatted_prompt = f"**response with \"<think>\\n\" at the beginning of every output**\nContext: {request.context or ''}\nQuestion: {request.question}"
+            
+            # 使用 Gemini 模型生成流式响应
+            async for chunk in gemini_stream_response(formatted_prompt):
+                yield chunk
+                full_response += chunk
             
             # 异步写入文件，不阻塞响应流
             async def write_record_file():
@@ -354,16 +384,17 @@ async def web_search_api(request: WebSearchRequest):
             
             # 流式返回 LLM 的响应
             full_response = "<think>\n正在使用Brave搜索引擎搜索...\n</think>\n<think>\n搜索完成，正在生成回答...\n</think>\n"
-            prompt_template = ChatPromptTemplate([
-                ("user", search_answer_zh_template)
-            ])
             
-            prompt = prompt_template.invoke({"context": context, "question": request.question})
-            response = model.stream(prompt)
+            # 格式化提示词
+            formatted_prompt = search_answer_zh_template.format(
+                context=context,
+                question=request.question
+            )
             
-            for chunk in response:
-                yield chunk.content
-                full_response += chunk.content
+            # 使用 Gemini 模型生成流式响应
+            async for chunk in gemini_stream_response(formatted_prompt):
+                yield chunk
+                full_response += chunk
             
             # 添加引用信息到响应末尾
             citations = "<references>\n"
