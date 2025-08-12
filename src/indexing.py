@@ -241,9 +241,9 @@ def delete_document_collections(index_names):
 
 if __name__ == "__main__":
     input_files = get_all_files_from_directory(
-        "/Users/Daglas/dalong.github/dalong.selfstudy/大牛文集/Andrej_Karpathy", 
+        "/Users/Daglas/dalong.github/dalong.selfstudy/大牛文集/Jensen_Huang", 
         "md")
     # build_basic_fixed_size_index(input_files, "Course2025009The_Theory_of_Lifes_Edge", )
-    build_basic_fixed_size_index(input_files, "Titan_Andrej_Karpathy", )
+    build_basic_fixed_size_index(input_files, "Titan_Jensen_Huang", )
     # build_basic_fixed_size_index(input_files, "Book2019278Statistics_and_Truth", )
-    # build_basic_fixed_size_index(["/Users/Daglas/dalong.processdesign/03规范汇总/GBT20801-2020压力管道规范.md"], "Standard_GBT20801_2020", )
+    # build_basic_fixed_size_index(["/Users/Daglas/Downloads/AQ3062-2025精细化工企业安全管理规范.md"], "Standard_AQ3062_2025", )
