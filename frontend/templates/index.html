@@ -25,46 +25,57 @@
                 </div>
             </div>
     
-            <!-- 第二列：输入部分 -->
-            <div class="input-section">
-                <div class="section">
-                    <h2>RAG 增强检索
-                        <div class="mode-toggle" style="display: inline-block; margin-left: 15px;">
-                            <span>聊天模式</span>
-                            <label class="switch">
-                                <input type="checkbox" id="modeToggle" checked>
-                                <span class="slider round"></span>
-                            </label>
-                            <span>RAG 模式</span>
-                        </div>
-                        <div class="mode-toggle web-mode-toggle" style="display: inline-block; margin-left: 15px;">
-                            <span>本地知识</span>
-                            <label class="switch">
-                                <input type="checkbox" id="webModeToggle">
-                                <span class="slider round"></span>
-                            </label>
-                            <span>联网模式</span>
-                        </div>
-                    </h2>
-                    <form id="unifiedQueryForm" style="display: flex; flex-direction: column; flex-grow: 1;">
-                        <textarea id="unifiedQuestion" placeholder="输入你的问题..."></textarea>
-                        <div class="controls-container">
-                            <button type="submit" id="unifiedQueryButton">发送</button>
-                            <button type="button" id="unifiedTerminateButton" class="terminate-btn">终止</button>
-                            <button type="button" id="clearHistoryButton" class="btn">清除历史记录</button>
-                            <span>检索数量</span>
-                            <input type="number" id="similarityTopK" placeholder="输入similarity_top_k（默认12）" value="12">
-                        </div>
-                    </form>
-                    <div id="queryResult"></div>
-                </div>
-            </div>
-    
-            <!-- 第三列：输出部分 -->
+            <!-- 第二列：输出部分（包含输出+右侧引用+底部输入） -->
             <div class="output-section">
                 <div class="section">
                     <h2>输出结果 <button id="copyButton" style="float: right;">复制结果</button></h2>
-                    <div id="streamOutput" class="markdown-output"></div>
+                    <div class="output-content">
+                        <div class="answer-area">
+                            <div id="streamOutput" class="markdown-output"></div>
+                        </div>
+                        <aside class="references-sidebar">
+                            <div class="references-container">
+                                <div class="references-header">
+                                    <span>引用</span>
+                                    <button class="references-toggle">▼</button>
+                                </div>
+                                <div class="references-content" id="referencesContent"></div>
+                            </div>
+                        </aside>
+                    </div>
+
+                    <!-- 底部输入区域（原 input-section 移至此处） -->
+                    <div class="input-panel">
+                        <h2>RAG 增强检索
+                            <div class="mode-toggle" style="display: inline-block; margin-left: 15px;">
+                                <span>聊天模式</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="modeToggle" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                                <span>RAG 模式</span>
+                            </div>
+                            <div class="mode-toggle web-mode-toggle" style="display: inline-block; margin-left: 15px;">
+                                <span>本地知识</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="webModeToggle">
+                                    <span class="slider round"></span>
+                                </label>
+                                <span>联网模式</span>
+                            </div>
+                        </h2>
+                        <form id="unifiedQueryForm" style="display: flex; flex-direction: column;">
+                            <textarea id="unifiedQuestion" placeholder="输入你的问题..."></textarea>
+                            <div class="controls-container">
+                                <button type="submit" id="unifiedQueryButton">发送</button>
+                                <button type="button" id="unifiedTerminateButton" class="terminate-btn">终止</button>
+                                <button type="button" id="clearHistoryButton" class="btn">清除历史记录</button>
+                                <span>检索数量</span>
+                                <input type="number" id="similarityTopK" placeholder="输入similarity_top_k（默认12）" value="12">
+                            </div>
+                        </form>
+                        <div id="queryResult"></div>
+                    </div>
                 </div>
             </div>
         </div>

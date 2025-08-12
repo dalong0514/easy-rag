@@ -221,6 +221,7 @@ const StreamProcessor = {
     // 更新流式输出
     updateStreamOutput(content, question) {
         const outputElement = document.getElementById('streamOutput');
+        const referencesContainerEl = document.getElementById('referencesContent');
         
         // 将问题和回答内容拼接
         const fullContent = question ? `提示词：${question}\n\n${content}` : content;
@@ -264,108 +265,81 @@ const StreamProcessor = {
                 }
             });
             
-            // 如果有引用部分，添加引用部分的HTML
-            if (referencesContent) {
-                // 格式化引用内容
-                let formattedReferences = '';
-                const referenceLines = referencesContent.trim().split('\n');
-                
-                referenceLines.forEach((line, index) => {
-                    if (line.trim()) {
-                        // 识别引用项的形式 [index]: content
-                        const match = line.match(/^\[(\d+)\]:\s*(.*)/);
-                        if (match) {
-                            const refIndex = match[1];
-                            let startContent = match[2];
-                            let metadata = '';
-                            
-                            // 检查是否包含元信息
-                            if (startContent.startsWith('Metadata:')) {
-                                metadata = startContent.substring('Metadata:'.length).trim();
-                                
-                                // 从下一行开始收集文本内容，直到找到下一个引用项或结束
-                                let content = '';
-                                let nextLineIndex = index + 1;
-                                while (nextLineIndex < referenceLines.length && 
-                                      !referenceLines[nextLineIndex].match(/^\[\d+\]:/)) {
-                                    if (referenceLines[nextLineIndex].trim()) {
-                                        content += referenceLines[nextLineIndex] + '\n';
+            // 如果有引用部分，将引用渲染到右侧侧栏
+            if (referencesContainerEl) {
+                if (referencesContent) {
+                    let formattedReferences = '';
+                    const referenceLines = referencesContent.trim().split('\n');
+                    referenceLines.forEach((line, index) => {
+                        if (line.trim()) {
+                            const match = line.match(/^\[(\d+)\]:\s*(.*)/);
+                            if (match) {
+                                const refIndex = match[1];
+                                let startContent = match[2];
+                                let metadata = '';
+                                if (startContent.startsWith('Metadata:')) {
+                                    metadata = startContent.substring('Metadata:'.length).trim();
+                                    let content = '';
+                                    let nextLineIndex = index + 1;
+                                    while (nextLineIndex < referenceLines.length && !referenceLines[nextLineIndex].match(/^\[\d+\]:/)) {
+                                        if (referenceLines[nextLineIndex].trim()) {
+                                            content += referenceLines[nextLineIndex] + '\n';
+                                        }
+                                        nextLineIndex++;
                                     }
-                                    nextLineIndex++;
-                                }
-                                
-                                formattedReferences += `<div class="reference-item" id="ref-${refIndex}">
-                                    <div class="reference-index">[${refIndex}]</div>
-                                    <div class="reference-content">
-                                        ${metadata ? `<div class="reference-metadata">${metadata}</div>` : ''}
-                                        <div class="reference-text">${content.trim()}</div>
-                                    </div>
-                                </div>`;
-                            } else {
-                                // 没有元信息，只有文本内容
-                                // 从当前行开始收集文本内容，直到找到下一个引用项或结束
-                                let content = startContent;
-                                if (content.trim()) content += '\n';
-                                
-                                let nextLineIndex = index + 1;
-                                while (nextLineIndex < referenceLines.length && 
-                                      !referenceLines[nextLineIndex].match(/^\[\d+\]:/)) {
-                                    if (referenceLines[nextLineIndex].trim()) {
-                                        content += referenceLines[nextLineIndex] + '\n';
+                                    formattedReferences += `<div class="reference-item" id="ref-${refIndex}">
+                                        <div class="reference-index">[${refIndex}]</div>
+                                        <div class="reference-content">
+                                            ${metadata ? `<div class=\"reference-metadata\">${metadata}</div>` : ''}
+                                            <div class="reference-text">${content.trim()}</div>
+                                        </div>
+                                    </div>`;
+                                } else {
+                                    let content = startContent;
+                                    if (content.trim()) content += '\n';
+                                    let nextLineIndex = index + 1;
+                                    while (nextLineIndex < referenceLines.length && !referenceLines[nextLineIndex].match(/^\[\d+\]:/)) {
+                                        if (referenceLines[nextLineIndex].trim()) {
+                                            content += referenceLines[nextLineIndex] + '\n';
+                                        }
+                                        nextLineIndex++;
                                     }
-                                    nextLineIndex++;
+                                    formattedReferences += `<div class="reference-item" id="ref-${refIndex}">
+                                        <div class="reference-index">[${refIndex}]</div>
+                                        <div class="reference-content">
+                                            <div class="reference-text">${content.trim()}</div>
+                                        </div>
+                                    </div>`;
                                 }
-                                
-                                formattedReferences += `<div class="reference-item" id="ref-${refIndex}">
-                                    <div class="reference-index">[${refIndex}]</div>
-                                    <div class="reference-content">
-                                        <div class="reference-text">${content.trim()}</div>
-                                    </div>
-                                </div>`;
                             }
-                        } else if (!line.match(/^\[\d+\]:/)) {
-                            // 这里不需要进行处理，因为内容已经在上面的逻辑中捕获
                         }
-                    }
-                });
-                
-                formattedContent += `<div class="references-container">
-                    <div class="references-header">
-                        <span>引用</span>
-                        <button class="references-toggle">▼</button>
-                    </div>
-                    <div class="references-content">
-                        ${formattedReferences}
-                    </div>
-                </div>`;
+                    });
+                    referencesContainerEl.innerHTML = formattedReferences;
+                } else {
+                    referencesContainerEl.innerHTML = '';
+                }
             }
             
             // 使用requestAnimationFrame优化渲染性能
             requestAnimationFrame(() => {
                 outputElement.innerHTML = marked.parse(formattedContent);
-                
-                // 处理引用链接
+                // 处理引用链接（跳转到右侧引用区域）
                 this.processCitationLinks(outputElement);
-                
-                // 添加引用区域的折叠/展开功能
-                const toggleButtons = outputElement.querySelectorAll('.references-toggle');
-                toggleButtons.forEach(button => {
-                    if (!button.hasListener) {
-                        button.addEventListener('click', () => {
-                            const container = button.closest('.references-container');
-                            const content = container.querySelector('.references-content');
-                            if (content.style.display === 'none') {
-                                content.style.display = 'block';
-                                button.textContent = '▼';
-                            } else {
-                                content.style.display = 'none';
-                                button.textContent = '▶';
-                            }
-                        });
-                        button.hasListener = true;
-                    }
-                });
-                
+                // 右侧折叠按钮监听（只绑定一次）
+                const sidebarToggle = document.querySelector('.references-toggle');
+                const sidebarContent = document.getElementById('referencesContent');
+                if (sidebarToggle && !sidebarToggle.hasListener) {
+                    sidebarToggle.addEventListener('click', () => {
+                        if (sidebarContent.style.display === 'none') {
+                            sidebarContent.style.display = 'block';
+                            sidebarToggle.textContent = '▼';
+                        } else {
+                            sidebarContent.style.display = 'none';
+                            sidebarToggle.textContent = '▶';
+                        }
+                    });
+                    sidebarToggle.hasListener = true;
+                }
                 outputElement.scrollTop = outputElement.scrollHeight;
             });
             
