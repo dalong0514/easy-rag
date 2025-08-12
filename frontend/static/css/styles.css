@@ -33,6 +33,9 @@ body {
 
 .output-section {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 150px);
 }
 
 .filter-input {
@@ -56,6 +59,64 @@ body {
     overflow-y: auto; /* 添加垂直滚动 */
     display: flex;
     flex-direction: column;
+}
+
+/* 新增可滚动输出区域样式 */
+.scrollable-output-section {
+    margin-bottom: 20px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* 添加滚动阴影效果 */
+.scrollable-output-section::before,
+.scrollable-output-section::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 20px;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 10;
+}
+
+.scrollable-output-section::before {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.1), transparent);
+    opacity: 0;
+}
+
+.scrollable-output-section::after {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.1), transparent);
+    opacity: 0;
+}
+
+/* 当可以向上滚动时显示顶部阴影 */
+.scrollable-output-section.can-scroll-up::before {
+    opacity: 1;
+}
+
+/* 当可以向下滚动时显示底部阴影 */
+.scrollable-output-section.can-scroll-down::after {
+    opacity: 1;
+}
+
+/* 固定输入面板样式 */
+.fixed-input {
+    flex-shrink: 0;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    margin-top: 10px;
 }
 
 /* 输出区：左侧答案 + 右侧引用侧栏 */
@@ -592,11 +653,18 @@ input:checked + .slider:before {
     resize: none; /* 禁止用户调整大小 */
 }
 
-/* 底部输入面板 */
+/* 底部输入面板（原始样式，用于非固定情况） */
 .input-panel {
     margin-top: 16px;
     border-top: 1px solid #eee;
     padding-top: 12px;
+}
+
+/* 覆盖固定输入面板的样式 */
+.input-panel.fixed-input {
+    margin-top: 10px;
+    border-top: none;
+    padding-top: 15px;
 }
 
 .mode-toggle span {

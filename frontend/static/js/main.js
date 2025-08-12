@@ -341,6 +341,12 @@ const StreamProcessor = {
                     sidebarToggle.hasListener = true;
                 }
                 outputElement.scrollTop = outputElement.scrollHeight;
+                
+                // 更新滚动阴影效果
+                const scrollableSection = outputElement.closest('.scrollable-output-section');
+                if (scrollableSection && typeof ScrollShadowEffect !== 'undefined') {
+                    ScrollShadowEffect.updateShadows(scrollableSection);
+                }
             });
             
             this.lastProcessedLength = fullContent.length;
@@ -1018,6 +1024,35 @@ const EventHandler = {
     }
 };
 
+// 滚动阴影效果模块
+const ScrollShadowEffect = {
+    // 初始化滚动阴影效果
+    init() {
+        const scrollableSection = document.querySelector('.scrollable-output-section');
+        if (scrollableSection) {
+            this.updateShadows(scrollableSection);
+            scrollableSection.addEventListener('scroll', () => {
+                this.updateShadows(scrollableSection);
+            });
+        }
+    },
+
+    // 更新阴影显示状态
+    updateShadows(element) {
+        const { scrollTop, scrollHeight, clientHeight } = element;
+        
+        // 判断是否可以向上滚动（不在顶部）
+        const canScrollUp = scrollTop > 0;
+        
+        // 判断是否可以向下滚动（不在底部）
+        const canScrollDown = scrollTop + clientHeight < scrollHeight - 1;
+        
+        // 更新CSS类
+        element.classList.toggle('can-scroll-up', canScrollUp);
+        element.classList.toggle('can-scroll-down', canScrollDown);
+    }
+};
+
 // 初始化应用
 document.addEventListener('DOMContentLoaded', function() {
     // 初始化事件监听器
@@ -1038,4 +1073,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const webModeToggle = document.getElementById('webModeToggle');
     webModeToggle.checked = false;
     UnifiedQueryProcessor.toggleWebMode(false);
+
+    // 初始化滚动阴影效果
+    ScrollShadowEffect.init();
 });
